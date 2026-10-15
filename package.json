@@ -15,6 +15,8 @@
     "dev:vite": "pnpm --parallel --filter @poke-dev/core --filter @poke-dev/vite --filter '@poke-dev/playground-vite*' dev",
     "dev:webpack": "pnpm --filter @poke-dev/core build && pnpm --filter @poke-dev/webpack build && pnpm --parallel --filter @poke-dev/core --filter @poke-dev/webpack --filter @poke-dev/playground-webpack dev",
     "dev:webpack:once": "pnpm --filter @poke-dev/core build && pnpm --filter @poke-dev/webpack build && pnpm --filter @poke-dev/playground-webpack dev",
+    "dev:webpack4": "pnpm --filter @poke-dev/core build && pnpm --filter @poke-dev/webpack build && pnpm --filter @poke-dev/playground-webpack4 dev",
+    "dev:vue2": "pnpm --filter @poke-dev/core build && pnpm --filter @poke-dev/webpack build && pnpm --filter @poke-dev/playground-vue2 dev",
     "build": "pnpm -r --filter=./packages/* build",
     "typecheck": "pnpm -r --filter=./packages/* typecheck",
     "test": "pnpm -r --filter=./packages/* --if-present test",

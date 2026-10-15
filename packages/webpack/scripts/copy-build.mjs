@@ -3,7 +3,7 @@ import { dirname, join } from 'path'
 import { fileURLToPath } from 'url'
 
 const packageRoot = join(dirname(fileURLToPath(import.meta.url)), '..')
-const sourceFiles = ['client-entry.js', 'source-loader.cjs']
+const sourceFiles = ['client-entry.js', 'source-loader.cjs', 'vue-source.cjs', 'vue-source-loader.cjs']
 const targetDir = join(packageRoot, 'dist')
 
 for (const fileName of sourceFiles) {

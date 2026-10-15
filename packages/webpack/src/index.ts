@@ -8,18 +8,26 @@ export type { PokePluginOptions }
 export type PokeWebpackPluginOptions = PokePluginOptions & { clientPath?: string }
 
 type WebpackCompiler = {
+  context?: string
   options?: {
-    devServer?: { setupMiddlewares?: (middlewares: unknown[], devServer: WebpackDevServerLike) => unknown[] }
+    devServer?: {
+      setupMiddlewares?: (middlewares: unknown[], devServer: WebpackDevServerLike) => unknown[]
+      before?: (app: ExpressLike, server: unknown, compiler: WebpackCompiler) => void
+    }
     entry?: unknown
     mode?: string
     module?: { rules?: unknown[] }
   }
+  // webpack 5 exposes the `webpack` namespace on the compiler; webpack 4 does not.
+  webpack?: { version?: string }
 }
 
 type WebpackDevServerLike = {
-  app?: { use: (path: string, middleware: (...args: unknown[]) => unknown) => void }
+  app?: ExpressLike
   compiler?: { context?: string }
 }
+
+type ExpressLike = { use: (path: string, middleware: (...args: unknown[]) => unknown) => void }
 
 const packageDirectory = __dirname
 
@@ -30,6 +38,7 @@ function getBundledAssetPath(fileName: string) {
 
 const clientEntryPath = getBundledAssetPath('client-entry.js')
 const sourceLoaderPath = getBundledAssetPath('source-loader.cjs')
+const vueSourceLoaderPath = getBundledAssetPath('vue-source-loader.cjs')
 
 function hasEntryValue(entry: unknown, value: string): boolean {
   if (entry === value) return true
@@ -128,6 +137,43 @@ function injectSourceLoaderIntoRules(rules: unknown[]): boolean {
   return didInject
 }
 
+function ruleUsesVueSourceLoader(rule: unknown): boolean {
+  if (!isPlainObject(rule)) {
+    return false
+  }
+
+  if (rule.loader === vueSourceLoaderPath) {
+    return true
+  }
+
+  if (rule.use === vueSourceLoaderPath) {
+    return true
+  }
+
+  if (Array.isArray(rule.use)) {
+    return rule.use.some((item) => item === vueSourceLoaderPath || (isPlainObject(item) && item.loader === vueSourceLoaderPath))
+  }
+
+  return false
+}
+
+// R7: legacy Vue2 / any webpack + vue-loader project. vue-loader builds its descriptor
+// from the source of the plain `.vue` request (its block-splitting pitcher only matches
+// `?vue&type=` sub-requests), so an `enforce: 'pre'` loader on the main request runs first
+// and the injected template attributes propagate into the compiled render function.
+function ensureVueSourceLoaderRule(rules: unknown[]): void {
+  if (rules.some(ruleUsesVueSourceLoader)) {
+    return
+  }
+
+  rules.unshift({
+    enforce: 'pre',
+    exclude: /node_modules/u,
+    test: /\.vue$/u,
+    use: vueSourceLoaderPath,
+  })
+}
+
 export class PokeWebpackPlugin {
   readonly name = 'poke:webpack'
   constructor(private readonly options: PokeWebpackPluginOptions = {}) {}
@@ -151,28 +197,49 @@ export class PokeWebpackPlugin {
             },
             ...rules,
           ]
+      // Vue SFC injection is independent of the JSX rules above: a `\.vue`-only rule
+      // matches nothing in React-only builds, so it is safe to always register it.
+      ensureVueSourceLoaderRule(compiler.options.module.rules)
     }
 
-    const previousSetupMiddlewares = compiler.options.devServer.setupMiddlewares
     const pluginOptions = this.options
 
-    compiler.options.devServer.setupMiddlewares = (middlewares: unknown[], devServer: WebpackDevServerLike) => {
-      const root = pluginOptions.root || devServer.compiler?.context || process.cwd()
-      const app = devServer.app
-      if (app) {
-        for (const route of createPokeMiddlewares(root, pluginOptions)) {
-          app.use(route.path, route.middleware as (...args: unknown[]) => unknown)
-        }
-        const clientMiddleware = (_req: unknown, res: { setHeader: (key: string, value: string) => void; end: (body: string) => void }) => {
-          res.setHeader('Content-Type', 'application/javascript; charset=utf-8')
-          res.end(getPokeClientCode({ base: '/', defaultProvider: pluginOptions.agents?.defaultProvider, options: pluginOptions, pluginProxy: normalizeProxy(pluginOptions.codex?.proxy ?? pluginOptions.proxy), root }))
-        }
-        app.use('/__poke/client.js', clientMiddleware as (...args: unknown[]) => unknown)
-        if (pluginOptions.clientPath && pluginOptions.clientPath !== '/__poke/client.js') {
-          app.use(pluginOptions.clientPath, clientMiddleware as (...args: unknown[]) => unknown)
-        }
+    const registerRoutes = (app: ExpressLike | undefined, contextRoot?: string) => {
+      if (!app) return
+      const root = pluginOptions.root || contextRoot || process.cwd()
+      for (const route of createPokeMiddlewares(root, pluginOptions)) {
+        app.use(route.path, route.middleware as (...args: unknown[]) => unknown)
       }
-      return previousSetupMiddlewares ? previousSetupMiddlewares(middlewares, devServer) : middlewares
+      const clientMiddleware = (_req: unknown, res: { setHeader: (key: string, value: string) => void; end: (body: string) => void }) => {
+        res.setHeader('Content-Type', 'application/javascript; charset=utf-8')
+        res.end(getPokeClientCode({ base: '/', defaultProvider: pluginOptions.agents?.defaultProvider, options: pluginOptions, pluginProxy: normalizeProxy(pluginOptions.codex?.proxy ?? pluginOptions.proxy), root }))
+      }
+      app.use('/__poke/client.js', clientMiddleware as (...args: unknown[]) => unknown)
+      if (pluginOptions.clientPath && pluginOptions.clientPath !== '/__poke/client.js') {
+        app.use(pluginOptions.clientPath, clientMiddleware as (...args: unknown[]) => unknown)
+      }
+    }
+
+    // webpack 5 implies webpack-dev-server 4/5 (setupMiddlewares); webpack 4 implies
+    // dev-server 3, whose middleware hook is `before(app, server, compiler)`. Prefer the
+    // compiler's own signal and fall back to the presence of the webpack 5 namespace.
+    const isWebpackFive = Boolean(compiler.webpack)
+
+    if (isWebpackFive) {
+      const devServer = compiler.options.devServer
+      if (!devServer.setupMiddlewares) devServer.setupMiddlewares = (middlewares: unknown[]) => middlewares
+      const previousSetupMiddlewares = devServer.setupMiddlewares
+      devServer.setupMiddlewares = (middlewares: unknown[], server: WebpackDevServerLike) => {
+        registerRoutes(server?.app, server?.compiler?.context)
+        return previousSetupMiddlewares(middlewares, server)
+      }
+    } else {
+      const devServer = compiler.options.devServer
+      const previousBefore = devServer.before
+      devServer.before = (app: ExpressLike, server: unknown, ownCompiler: WebpackCompiler) => {
+        registerRoutes(app, ownCompiler?.context)
+        if (previousBefore) previousBefore(app, server, ownCompiler)
+      }
     }
   }
 }
