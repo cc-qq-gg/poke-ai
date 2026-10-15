@@ -77,3 +77,37 @@ export default { render() { return '<div>in script</div>' } }
     expect(injectVueSourceAttributes('<script>export default {}</script>', FILE)).toBeNull()
   })
 })
+
+// The loader wraps the injector with a per-file memo; exercise it through a fake
+// webpack loader context (`this.resourcePath`).
+const pokeVueSourceLoader = require('../src/vue-source-loader.cjs') as (
+  this: { resourcePath: string },
+  source: string,
+) => string
+
+describe('pokeVueSourceLoader memoization', () => {
+  const src = '<template>\n  <div>hi</div>\n</template>\n<script>export default {}</script>'
+
+  it('injects source coords through the loader', () => {
+    const out = pokeVueSourceLoader.call({ resourcePath: '/abs/src/Loader.vue' }, src)
+
+    expect(out).toContain('data-poke-source="/abs/src/Loader.vue:2:3"')
+  })
+
+  it('returns the exact same markup for repeated sub-requests of one source', () => {
+    const a = pokeVueSourceLoader.call({ resourcePath: '/abs/src/Sub.vue' }, src)
+    const b = pokeVueSourceLoader.call({ resourcePath: '/abs/src/Sub.vue' }, src)
+
+    expect(a).toContain('data-poke-source')
+    expect(b).toBe(a)
+  })
+
+  it('recomputes on content change and passes non-.vue requests through untouched', () => {
+    const path = '/abs/src/Edit.vue'
+    pokeVueSourceLoader.call({ resourcePath: path }, src)
+    const changed = pokeVueSourceLoader.call({ resourcePath: path }, src.replace('hi', 'bye'))
+
+    expect(changed).toContain('>bye<')
+    expect(pokeVueSourceLoader.call({ resourcePath: '/abs/main.js' }, src)).toBe(src)
+  })
+})

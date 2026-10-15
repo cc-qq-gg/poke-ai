@@ -128,6 +128,9 @@ function injectVueSourceAttributes(code, fileName) {
     return null
   }
 
+  // Parse the template block standalone: its node offsets are relative to the
+  // block content and line up with `templateOffset`. (descriptor.template.ast is
+  // NOT content-relative, so reusing it would shift every coordinate.)
   let templateAst
 
   try {
@@ -144,12 +147,21 @@ function injectVueSourceAttributes(code, fileName) {
     return null
   }
 
-  let transformedCode = code
-  for (const insertion of insertions.sort((left, right) => right.offset - left.offset)) {
-    transformedCode = `${transformedCode.slice(0, insertion.offset)}${insertion.content}${transformedCode.slice(insertion.offset)}`
+  // Single-pass rebuild. The previous loop resliced the whole source per
+  // insertion (O(insertions * size)); collecting chunks once keeps it linear.
+  insertions.sort((left, right) => left.offset - right.offset)
+
+  const chunks = []
+  let cursor = 0
+
+  for (const insertion of insertions) {
+    chunks.push(code.slice(cursor, insertion.offset), insertion.content)
+    cursor = insertion.offset
   }
 
-  return transformedCode
+  chunks.push(code.slice(cursor))
+
+  return chunks.join('')
 }
 
 module.exports = { injectVueSourceAttributes, sourceAttribute, sourceRangeAttribute }
