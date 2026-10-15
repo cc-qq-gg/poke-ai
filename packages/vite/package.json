@@ -1,0 +1,54 @@
+{
+  "name": "@ai-ins/vite",
+  "version": "1.0.4",
+  "description": "Vite plugin for AI Ins.",
+  "author": "Rongding Wang <wangrongding@qq.com> (https://github.com/wangrongding)",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/wangrongding/ai-ins.git",
+    "directory": "packages/vite"
+  },
+  "bugs": {
+    "url": "https://github.com/wangrongding/ai-ins/issues"
+  },
+  "homepage": "https://github.com/wangrongding/ai-ins/tree/main/packages/vite",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsup src/index.ts --format esm,cjs --dts --sourcemap --clean",
+    "dev": "tsup src/index.ts --format esm,cjs --dts --sourcemap --clean --watch",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "devDependencies": {
+    "@types/babel__core": "^7.20.5",
+    "tsup": "^8.4.0",
+    "typescript": "^5.8.3",
+    "vite": "^8.0.10"
+  },
+  "peerDependencies": {
+    "vite": "^5.0.0 || ^6.0.0 || ^7.0.0 || ^8.0.0"
+  },
+  "dependencies": {
+    "@ai-ins/core": "workspace:*",
+    "@babel/core": "^7.29.0",
+    "svelte": "^5.55.5",
+    "@vue/compiler-dom": "^3.5.13",
+    "@vue/compiler-sfc": "^3.5.13"
+  }
+}

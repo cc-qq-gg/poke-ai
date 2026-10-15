@@ -1,0 +1,55 @@
+{
+  "name": "@ai-ins/webpack",
+  "version": "1.0.4",
+  "description": "Webpack plugin for AI Ins.",
+  "author": "Rongding Wang <wangrongding@qq.com> (https://github.com/wangrongding)",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/wangrongding/ai-ins.git",
+    "directory": "packages/webpack"
+  },
+  "bugs": {
+    "url": "https://github.com/wangrongding/ai-ins/issues"
+  },
+  "homepage": "https://github.com/wangrongding/ai-ins/tree/main/packages/webpack",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "copy-build": "node scripts/copy-build.mjs",
+    "build": "tsup src/index.ts --format esm,cjs --dts --sourcemap --clean --shims && pnpm copy-build",
+    "dev": "tsup src/index.ts --format esm,cjs --dts --sourcemap --shims --watch --onSuccess \"pnpm copy-build\"",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "devDependencies": {
+    "tsup": "^8.4.0",
+    "typescript": "^5.8.3",
+    "webpack": "^5.99.0",
+    "webpack-dev-server": "^5.2.0"
+  },
+  "peerDependencies": {
+    "webpack": "^5.0.0",
+    "webpack-dev-server": "^4.0.0 || ^5.0.0"
+  },
+  "dependencies": {
+    "@ai-ins/core": "workspace:*",
+    "@babel/core": "^7.29.0",
+    "@babel/plugin-transform-react-jsx": "^7.28.6",
+    "@babel/plugin-transform-typescript": "^7.28.6"
+  }
+}

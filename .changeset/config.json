@@ -1,0 +1,28 @@
+{
+  "$schema": "https://unpkg.com/@changesets/config@3.1.4/schema.json",
+  "changelog": "@changesets/cli/changelog",
+  "commit": false,
+  "fixed": [
+    [
+      "ai-ins",
+      "@ai-ins/core",
+      "@ai-ins/vite",
+      "@ai-ins/webpack",
+      "@ai-ins/nextjs",
+      "@ai-ins/astro"
+    ]
+  ],
+  "linked": [],
+  "access": "public",
+  "baseBranch": "main",
+  "updateInternalDependencies": "patch",
+  "ignore": [
+    "@ai-ins/playground-vite",
+    "@ai-ins/playground-vite-vue3",
+    "@ai-ins/playground-vite-solidjs",
+    "@ai-ins/playground-vite-svelte",
+    "@ai-ins/playground-nextjs",
+    "@ai-ins/playground-webpack",
+    "@ai-ins/playground-astro"
+  ]
+}
