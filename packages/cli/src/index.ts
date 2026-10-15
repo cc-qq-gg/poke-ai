@@ -3,6 +3,9 @@ import { spawnSync } from 'node:child_process'
 import { existsSync, readFileSync, readdirSync, writeFileSync } from 'node:fs'
 import { isAbsolute, join, relative } from 'node:path'
 import process from 'node:process'
+import { findMatchingBracket, patchArrayProperty, patchPlugins } from './installer.js'
+import { assessCompatibility, formatBlockingMessage, formatNoticeMessage } from './version.js'
+import { detectTransitiveBundler, isVueCliProject } from './detect.js'
 
 type Bundler = 'astro' | 'nextjs' | 'vite' | 'webpack'
 
@@ -11,6 +14,7 @@ type InitOptions = {
   config?: string
   cwd: string
   forceInstall: boolean
+  ignoreVersion: boolean
   install: boolean
 }
 
@@ -37,41 +41,44 @@ const viteConfigPattern = /^vite(?:\.[^.]+)*\.config(?:\.[^.]+)*\.[cm]?[jt]s$/u
 const webpackConfigPattern = /^webpack(?:\.[^.]+)*(?:\.config(?:\.[^.]+)*|\.(?:dev|prod|common|base))(?:\.[^.]+)*\.[cm]?[jt]s$/u
 
 function printHelp() {
-  console.log(`poke
+  console.log(`poke-ai
 
 Usage:
-  poke [--bundler astro|nextjs|vite|webpack] [--config <path>] [--no-install] [--force]
-  poke init [--bundler astro|nextjs|vite|webpack] [--config <path>] [--no-install] [--force]
+  poke-ai [--bundler astro|nextjs|vite|webpack] [--config <path>] [--no-install] [--force] [--ignore-version]
+  poke-ai init [--bundler astro|nextjs|vite|webpack] [--config <path>] [--no-install] [--force] [--ignore-version]
+
+  The legacy \`poke\` command is kept as an alias for \`poke-ai\`.
 
 Examples:
-  npx poke
-  npx poke --bundler astro
-  npx poke --bundler nextjs
-  npx poke --bundler vite
-  npx poke --bundler vite --config apps/web/vite.config.ts
-  npx poke --force
-  npx poke init
-  npx poke init --bundler vite
+  npx poke-ai
+  npx poke-ai --bundler astro
+  npx poke-ai --bundler nextjs
+  npx poke-ai --bundler vite
+  npx poke-ai --bundler vite --config apps/web/vite.config.ts
+  npx poke-ai --force
+  npx poke-ai init
+  npx poke-ai init --bundler vite
 `)
 }
 
 function printInitHelp() {
-  console.log(`poke init
+  console.log(`poke-ai init
 
 Usage:
-  poke [init] [--bundler astro|nextjs|vite|webpack] [--config <path>] [--no-install] [--force]
+  poke-ai [init] [--bundler astro|nextjs|vite|webpack] [--config <path>] [--no-install] [--force] [--ignore-version]
 
 Options:
   --bundler astro|nextjs|vite|webpack  Specify the bundler instead of auto-detecting it.
   --config <path>                      Update a specific bundler config file instead of auto-picking one.
   --no-install                         Update config only, without installing dependencies.
   --force                              Install the latest matching @poke-dev/* package even if it is already installed.
+  --ignore-version                     Proceed even if the detected Vite/Webpack/dev-server version is unsupported.
   --cwd <path>                         Run init in a different project directory.
 `)
 }
 
 function fail(message: string): never {
-  console.error(`poke: ${message}`)
+  console.error(`poke-ai: ${message}`)
   process.exit(1)
 }
 
@@ -242,11 +249,23 @@ function detectBundler(root: string, packageJson: PackageJson, requested?: Bundl
     fail(`found multiple possible bundlers (${detectedBundlers.join(', ')}). Run with --bundler astro, --bundler nextjs, --bundler vite or --bundler webpack.`)
   }
 
+  // Nothing was declared directly or via a config file. Fall back to bundlers
+  // hoisted into node_modules — that is how webpack shows up in a Vue CLI app.
+  const transitive = detectTransitiveBundler(root)
+
+  if (transitive.length === 1) {
+    return transitive[0]
+  }
+
+  if (transitive.length > 1) {
+    fail(`found bundlers installed transitively (${transitive.join(', ')}) but none as a direct dependency. Run with --bundler astro, --bundler nextjs, --bundler vite or --bundler webpack to choose one.`)
+  }
+
   fail('could not detect Astro, Next.js, Vite or Webpack. Run with --bundler astro, --bundler nextjs, --bundler vite or --bundler webpack.')
 }
 
 function parseInitOptions(args: string[]): InitOptions {
-  const options: InitOptions = { cwd: process.cwd(), forceInstall: false, install: true }
+  const options: InitOptions = { cwd: process.cwd(), forceInstall: false, ignoreVersion: false, install: true }
 
   for (let index = 0; index < args.length; index += 1) {
     const arg = args[index]
@@ -258,6 +277,11 @@ function parseInitOptions(args: string[]): InitOptions {
 
     if (arg === '--force') {
       options.forceInstall = true
+      continue
+    }
+
+    if (arg === '--ignore-version') {
+      options.ignoreVersion = true
       continue
     }
 
@@ -353,77 +377,6 @@ function installPackage(root: string, packageJson: PackageJson, packageName: str
   }
 }
 
-function getLineIndent(code: string, index: number) {
-  const lineStart = code.lastIndexOf('\n', index) + 1
-  const match = code.slice(lineStart, index).match(/^\s*/u)
-  return match?.[0] ?? ''
-}
-
-function findMatchingBracket(code: string, openIndex: number, openChar: string, closeChar: string) {
-  let depth = 0
-  let quote: '"' | "'" | '`' | undefined
-  let escaped = false
-  let lineComment = false
-  let blockComment = false
-
-  for (let index = openIndex; index < code.length; index += 1) {
-    const char = code[index]
-    const nextChar = code[index + 1]
-
-    if (lineComment) {
-      if (char === '\n') lineComment = false
-      continue
-    }
-
-    if (blockComment) {
-      if (char === '*' && nextChar === '/') {
-        blockComment = false
-        index += 1
-      }
-      continue
-    }
-
-    if (quote) {
-      if (escaped) {
-        escaped = false
-      } else if (char === '\\') {
-        escaped = true
-      } else if (char === quote) {
-        quote = undefined
-      }
-      continue
-    }
-
-    if (char === '/' && nextChar === '/') {
-      lineComment = true
-      index += 1
-      continue
-    }
-
-    if (char === '/' && nextChar === '*') {
-      blockComment = true
-      index += 1
-      continue
-    }
-
-    if (char === '"' || char === "'" || char === '`') {
-      quote = char
-      continue
-    }
-
-    if (char === openChar) {
-      depth += 1
-    } else if (char === closeChar) {
-      depth -= 1
-      if (depth === 0) {
-        return index
-      }
-    }
-  }
-
-  return -1
-}
-
 function insertImport(code: string, statement: string) {
   const importMatches = [...code.matchAll(/^import[\s\S]*?from\s+['"][^'"]+['"];?[ \t]*$/gmu)]
   const lastImport = importMatches.at(-1)
@@ -457,76 +410,6 @@ function uniqueIdentifier(code: string, preferredName: string) {
   return `${preferredName}${index}`
 }
 
-function addToArrayProperty(code: string, propertyName: string, expression: string, position: 'start' | 'end' = 'end') {
-  const match = new RegExp(`\\b${propertyName}\\s*:\\s*\\[`, 'u').exec(code)
-  if (!match) {
-    return null
-  }
-
-  const openIndex = match.index + match[0].lastIndexOf('[')
-  const closeIndex = findMatchingBracket(code, openIndex, '[', ']')
-  if (closeIndex === -1) {
-    return null
-  }
-
-  const beforeClose = code.slice(0, closeIndex)
-  const arrayBody = code.slice(openIndex + 1, closeIndex)
-  if (!arrayBody.trim()) {
-    return `${beforeClose}${expression}${code.slice(closeIndex)}`
-  }
-
-  if (position === 'start') {
-    const afterOpen = code.slice(openIndex + 1)
-    if (arrayBody.includes('\n')) {
-      const indent = `${getLineIndent(code, openIndex)}  `
-      return `${code.slice(0, openIndex + 1)}\n${indent}${expression},${afterOpen}`
-    }
-
-    return `${code.slice(0, openIndex + 1)}${expression}, ${afterOpen}`
-  }
-
-  if (arrayBody.includes('\n')) {
-    const indent = getLineIndent(code, closeIndex)
-    const trimmedBeforeClose = beforeClose.replace(/\s+$/u, '')
-    const hasTrailingComma = trimmedBeforeClose.endsWith(',')
-    const comma = hasTrailingComma ? '' : ','
-    // `]` 单独成行时保留它原来的换行和缩进，以及原有的尾逗号风格。
-    const closingWhitespace = beforeClose.slice(trimmedBeforeClose.length)
-    if (closingWhitespace.includes('\n')) {
-      return `${trimmedBeforeClose}${comma}\n${indent}  ${expression}${hasTrailingComma ? ',' : ''}${closingWhitespace}${code.slice(closeIndex)}`
-    }
-
-    return `${trimmedBeforeClose}${comma}\n${indent}  ${expression}${code.slice(closeIndex)}`
-  }
-
-  const trimmedBeforeClose = beforeClose.replace(/\s+$/u, '')
-  const separator = trimmedBeforeClose.endsWith(',') ? ' ' : ', '
-  return `${trimmedBeforeClose}${separator}${expression}${code.slice(closeIndex)}`
-}
-
-function addArrayProperty(code: string, propertyName: string, expression: string) {
-  const objectPatterns = [/defineConfig\s*\(\s*\{/u, /export\s+default\s+\{/u, /module\.exports\s*=\s*\{/u]
-
-  for (const pattern of objectPatterns) {
-    const match = pattern.exec(code)
-    if (!match) continue
-
-    const openIndex = match.index + match[0].lastIndexOf('{')
-    const indent = getLineIndent(code, openIndex)
-    return `${code.slice(0, openIndex + 1)}\n${indent}  ${propertyName}: [${expression}],${code.slice(openIndex + 1)}`
-  }
-
-  return null
-}
-
-function patchArrayConfig(code: string, propertyName: string, expression: string, position: 'start' | 'end' = 'end') {
-  return addToArrayProperty(code, propertyName, expression, position) ?? addArrayProperty(code, propertyName, expression)
-}
-
-function patchPluginConfig(code: string, expression: string, position: 'start' | 'end' = 'end') {
-  return patchArrayConfig(code, 'plugins', expression, position)
-}
-
 function patchViteConfig(root: string, requestedConfig?: string) {
   const configFile = resolveConfigFile(root, 'vite', requestedConfig)
   if (!existsSync(configFile)) {
@@ -544,7 +427,7 @@ function patchViteConfig(root: string, requestedConfig?: string) {
 
   const importName = uniqueIdentifier(code, 'poke')
   const withImport = insertImport(code, `import ${importName} from '@poke-dev/vite'`)
-  const patched = patchPluginConfig(withImport, `${importName}()`, 'start')
+  const patched = patchPlugins(withImport, `${importName}()`, 'start')
   if (!patched) {
     fail(`could not update ${configFile}. Add ${importName}() to the Vite plugins array manually.`)
   }
@@ -570,7 +453,7 @@ function patchAstroConfig(root: string, requestedConfig?: string) {
 
   const importName = uniqueIdentifier(code, 'poke')
   const withImport = insertImport(code, `import ${importName} from '@poke-dev/astro'`)
-  const patched = patchArrayConfig(withImport, 'integrations', `${importName}()`)
+  const patched = patchArrayProperty(withImport, 'integrations', `${importName}()`)
   if (!patched) {
     fail(`could not update ${configFile}. Add ${importName}() to the Astro integrations array manually.`)
   }
@@ -579,7 +462,50 @@ function patchAstroConfig(root: string, requestedConfig?: string) {
   return configFile
 }
 
-function patchWebpackConfig(root: string, requestedConfig?: string) {
+function patchVueCliConfig(root: string) {
+  const configFile = join(root, 'vue.config.js')
+
+  if (existsSync(configFile) && readFileSync(configFile, 'utf-8').includes('@poke-dev/webpack')) {
+    console.log('- vue.config.js already references @poke-dev/webpack')
+
+    return configFile
+  }
+
+  console.log('\nPoke detected a Vue CLI project (webpack comes from @vue/cli-service, configured through vue.config.js).')
+  if (!existsSync(configFile)) {
+    console.log(`- No vue.config.js found at ${configFile}. Create it first.`)
+  }
+  console.log(
+    [
+      '- Poke will not rewrite vue.config.js automatically, because it is not a webpack config root.',
+      '  Add Poke to the configureWebpack section yourself:',
+      '',
+      "    const { PokeWebpackPlugin } = require('@poke-dev/webpack')",
+      '',
+      '    module.exports = {',
+      '      // ...existing vue-cli options...',
+      '      configureWebpack: {',
+      '        plugins: [new PokeWebpackPlugin()],',
+      '      },',
+      '    }',
+      '',
+      '  If configureWebpack already exists, just push new PokeWebpackPlugin() into its plugins array.',
+      '  (Alternatively use chainWebpack: config.plugin("poke").use(PokeWebpackPlugin).end())',
+      '',
+    ].join('\n'),
+  )
+
+  return configFile
+}
+
+function patchWebpackConfig(root: string, requestedConfig?: string, packageJson?: PackageJson) {
+  // Vue CLI projects expose webpack only transitively and configure it through
+  // vue.config.js (configureWebpack / chainWebpack). Auto-inserting here could
+  // corrupt the file, so detect the case and hand back an exact manual snippet.
+  if (isVueCliProject(root, packageJson ?? { dependencies: {}, devDependencies: {} })) {
+    return patchVueCliConfig(root)
+  }
+
   const configFile = resolveConfigFile(root, 'webpack', requestedConfig)
   if (!existsSync(configFile)) {
     writeFileSync(
@@ -604,7 +530,7 @@ function patchWebpackConfig(root: string, requestedConfig?: string) {
       ? `import { PokeWebpackPlugin } from '@poke-dev/webpack'`
       : `import { PokeWebpackPlugin as ${className} } from '@poke-dev/webpack'`
   const withImport = isCommonJs ? insertRequire(code, statement) : insertImport(code, statement)
-  const patched = patchPluginConfig(withImport, `new ${className}()`)
+  const patched = patchPlugins(withImport, `new ${className}()`)
   if (!patched) {
     fail(`could not update ${configFile}. Add new ${className}() to the Webpack plugins array manually.`)
   }
@@ -704,6 +630,30 @@ function patchNextClientInstrumentation(root: string) {
   return configFile
 }
 
+function enforceVersionCompatibility(root: string, packageJson: PackageJson, bundler: Bundler, bypass: boolean) {
+  const { blocking, notices } = assessCompatibility(root, packageJson, bundler)
+
+  for (const notice of notices) {
+    console.warn(`poke-ai: ${formatNoticeMessage(notice)}`)
+  }
+
+  if (blocking.length === 0) {
+    return
+  }
+
+  for (const report of blocking) {
+    console.error(`poke-ai: ${formatBlockingMessage(report)}`)
+  }
+
+  if (bypass) {
+    console.warn('poke-ai: continuing despite the version mismatch because --ignore-version/--force was passed.')
+    return
+  }
+
+  console.error('poke-ai: upgrade the package(s) above, or re-run with --ignore-version to proceed anyway.')
+  process.exit(1)
+}
+
 function runInit(args: string[]) {
   if (isHelpArg(args[0])) {
     printInitHelp()
@@ -718,6 +668,7 @@ function runInit(args: string[]) {
 
   const packageJson = readJsonFile<PackageJson>(packageJsonPath)
   const bundler = detectBundler(options.cwd, packageJson, options.bundler, options.config)
+  enforceVersionCompatibility(options.cwd, packageJson, bundler, options.ignoreVersion || options.forceInstall)
   const packageName = pokePackages[bundler]
 
   console.log(`Poke init (${bundler})`)
@@ -725,14 +676,19 @@ function runInit(args: string[]) {
     installPackage(options.cwd, packageJson, packageName, options.forceInstall)
   }
 
-  const configPatchers: Record<Bundler, (root: string, requestedConfig?: string) => string> = {
+  const configPatchers: Record<Bundler, (root: string, requestedConfig?: string, packageJson?: PackageJson) => string> = {
     astro: patchAstroConfig,
     nextjs: patchNextConfig,
     vite: patchViteConfig,
     webpack: patchWebpackConfig,
   }
-  const configFile = configPatchers[bundler](options.cwd, options.config)
+  const configFile = configPatchers[bundler](options.cwd, options.config, packageJson)
   const clientFile = bundler === 'nextjs' ? patchNextClientInstrumentation(options.cwd) : undefined
+  const vueCliGuidance = bundler === 'webpack' && isVueCliProject(options.cwd, packageJson)
+  if (vueCliGuidance) {
+    console.log(`- vue.config.js was left untouched; apply the manual steps above and restart your dev server.`)
+    return
+  }
   console.log(`- Updated ${configFile}`)
   if (clientFile) {
     console.log(`- Updated ${clientFile}`)

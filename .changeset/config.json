@@ -4,7 +4,7 @@
   "commit": false,
   "fixed": [
     [
-      "poke",
+      "poke-ai",
       "@poke-dev/core",
       "@poke-dev/vite",
       "@poke-dev/webpack",
