@@ -8,16 +8,18 @@ const macLaunchEditorCandidates = [
   '/Applications/Visual Studio Code.app/Contents/MacOS/Code',
   '/Applications/Visual Studio Code - Insiders.app/Contents/MacOS/Code - Insiders',
   '/Applications/VSCodium.app/Contents/MacOS/Electron',
+  '/Applications/Qoder IDE.app/Contents/MacOS/Qoder',
   '/Applications/Zed.app/Contents/MacOS/zed',
   '/Applications/WebStorm.app/Contents/MacOS/webstorm',
 ]
 
-const commandLaunchEditorCandidates = ['cursor', 'code-insiders', 'code', 'codium', 'vscodium', 'zed', 'webstorm']
+const commandLaunchEditorCandidates = ['cursor', 'code-insiders', 'code', 'codium', 'vscodium', 'qoder', 'zed', 'webstorm']
 const macLaunchEditorCandidatesByCommand: Record<string, string[]> = {
   code: ['/Applications/Visual Studio Code.app/Contents/MacOS/Code'],
   'code-insiders': ['/Applications/Visual Studio Code - Insiders.app/Contents/MacOS/Code - Insiders'],
   codium: ['/Applications/VSCodium.app/Contents/MacOS/Electron'],
   cursor: ['/Applications/Cursor.app/Contents/MacOS/Cursor'],
+  qoder: ['/Applications/Qoder IDE.app/Contents/MacOS/Qoder'],
   vscodium: ['/Applications/VSCodium.app/Contents/MacOS/Electron'],
   webstorm: ['/Applications/WebStorm.app/Contents/MacOS/webstorm'],
   zed: ['/Applications/Zed.app/Contents/MacOS/zed'],
@@ -55,6 +57,14 @@ function getHostEditorPreference() {
 
   if (askpassNode.includes('code-insiders') || askpassNode.includes('visual studio code - insiders')) {
     return 'code-insiders'
+  }
+
+  // Qoder masquerades as VS Code (TERM_PROGRAM=vscode, VSCODE_* envs) but its
+  // askpass/bundle path sits under "Qoder IDE.app". Detect it before the generic
+  // VS Code fallback so "open in IDE" targets Qoder instead of launching VS Code.
+  const bundleIdentifier = process.env.__CFBundleIdentifier?.toLowerCase() ?? ''
+  if (askpassNode.includes('qoder') || bundleIdentifier === 'com.qoder.ide' || process.env.TERM_PROGRAM?.toLowerCase() === 'qoder') {
+    return 'qoder'
   }
 
   if (
@@ -384,6 +394,9 @@ function getMacEditorUrlScheme(editor: string) {
     case 'Cursor':
     case 'cursor':
       return 'cursor'
+    case 'Qoder':
+    case 'qoder':
+      return 'qoder'
     case 'VSCodium':
     case 'codium':
     case 'vscodium':
@@ -428,10 +441,12 @@ export function getEditorArgs(editor: string, fileName: string, lineNumber: numb
     case 'Code':
     case 'Code - Insiders':
     case 'Cursor':
+    case 'Qoder':
     case 'code':
     case 'code-insiders':
     case 'codium':
     case 'cursor':
+    case 'qoder':
     case 'Electron':
     case 'VSCodium':
       return ['-r', '-g', `${fileName}:${lineNumber}:${columnNumber}`]

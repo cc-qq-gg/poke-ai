@@ -651,6 +651,9 @@ export function openInEditorMiddleware(root: string): PokeMiddleware {
 
     try {
       const editorCommand = getOpenInEditorCommand(editor, fileName, lineNumber, columnNumber)
+      // Surface exactly which editor + command poke runs, so “no effect” clicks are
+      // diagnosable from the dev-server terminal instead of guessed.
+      console.log(`[poke] open in editor → ${[editorCommand.command, ...editorCommand.args].join(' ')} (resolved: ${editor})`)
       const child = spawn(editorCommand.command, editorCommand.args, {
         detached: true,
         shell: editorCommand.shell,

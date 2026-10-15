@@ -20,7 +20,7 @@ async function readResponseError(response) {
 }
 
 async function openInEditor(layerPath) {
-  const response = await fetch(`${base}__open-in-editor?file=${encodeURIComponent(layerPath)}`)
+  const response = await fetch(`${base}__poke/open-in-editor?file=${encodeURIComponent(layerPath)}`)
 
   if (response.ok) {
     return
@@ -30,7 +30,7 @@ async function openInEditor(layerPath) {
 }
 
 async function revealInFolder(layerPath) {
-  const response = await fetch(`${base}__reveal-in-folder?file=${encodeURIComponent(layerPath)}`)
+  const response = await fetch(`${base}__poke/reveal-in-folder?file=${encodeURIComponent(layerPath)}`)
 
   if (response.ok) {
     return

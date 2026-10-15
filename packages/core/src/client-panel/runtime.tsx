@@ -574,6 +574,14 @@ async function sendTurn(
   continueRun: AgentRun | undefined,
   submitTarget: { layer: LayerTarget; layers: LayerTarget[] } | undefined,
 ) {
+  // Re-entrancy guard: a fast double-click or a held Enter dispatches a second
+  // submit before the send button has re-rendered as disabled. Without this both
+  // calls POST and create two identical sessions. `submitting` is true only for
+  // the length of the request round-trip, so real follow-up turns still go out.
+  if (submitting) {
+    return
+  }
+
   // A follow-up turn belongs to the session's own agent; the picker is locked
   // to match, so never let a stale selection retarget it.
   const provider = continueRun ? getProvider(continueRun.providerId) : getCurrentProvider()

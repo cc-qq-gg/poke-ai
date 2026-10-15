@@ -33,7 +33,7 @@ async function readJson<T>(url: string, options?: RequestInit): Promise<T> {
 }
 
 async function openInEditor(layerPath: string) {
-  await readJson(`${base}__open-in-editor?file=${encodeURIComponent(layerPath)}`)
+  await readJson(`${base}__poke/open-in-editor?file=${encodeURIComponent(layerPath)}`)
 }
 
 async function runPokeAgent(

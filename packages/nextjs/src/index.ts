@@ -218,14 +218,8 @@ async function mergeRewrites(rewrites: NextRewrites | undefined, middlewarePort:
       source: '/__poke-agent/:path*',
       destination: `http://127.0.0.1:${middlewarePort}/__poke-agent/:path*`,
     },
-    {
-      source: '/__open-in-editor',
-      destination: `http://127.0.0.1:${middlewarePort}/__open-in-editor`,
-    },
-    {
-      source: '/__reveal-in-folder',
-      destination: `http://127.0.0.1:${middlewarePort}/__reveal-in-folder`,
-    },
+    // /__poke/open-in-editor and /__poke/reveal-in-folder are covered by the
+    // /__poke/:path* rewrite above.
   ]
   const existing = await resolveRewrites(rewrites)
 

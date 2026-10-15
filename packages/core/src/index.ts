@@ -45,8 +45,8 @@ export function createPokeMiddlewares(root: string, options: PokePluginOptions =
   configurePokeRunHistory(root, options.agents?.history)
 
   return [
-    { path: '/__open-in-editor', middleware: openInEditorMiddleware(root) },
-    { path: '/__reveal-in-folder', middleware: revealInFolderMiddleware(root) },
+    { path: '/__poke/open-in-editor', middleware: openInEditorMiddleware(root) },
+    { path: '/__poke/reveal-in-folder', middleware: revealInFolderMiddleware(root) },
     { path: '/__poke-config', middleware: pokeConfigMiddleware(root, options, codexProxy) },
     { path: '/__poke-settings', middleware: pokeSettingsMiddleware() },
     { path: '/__poke-agent/events', middleware: pokeEventsMiddleware(root) },
