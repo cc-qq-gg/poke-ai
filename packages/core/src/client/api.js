@@ -204,6 +204,7 @@ const userSettingFields = {
   'poke-notify': 'notify',
   'poke-panel-submit-shortcut': 'submitShortcut',
   'poke-panel-theme': 'theme',
+  'poke-panel-ui-theme': 'uiTheme',
   'poke-permission-mode': 'permissionMode',
   'poke-provider': 'provider',
   'poke-proxy': 'proxy',

@@ -231,6 +231,11 @@ export const zhTW: MessageCatalog = {
   'settings.theme': '主題',
   'settings.themeDark': '深色',
   'settings.themeLight': '淺色',
+  /* Panel skins (the look), separate from the dark / light brightness above. */
+  'settings.uiTheme': '皮膚',
+  'settings.uiThemeDefault': '預設',
+  'settings.uiThemeTech': '科技',
+  'settings.uiThemeCli': 'CLI',
   'settings.language': '語言',
   'settings.languageAuto': '跟隨瀏覽器語言',
 

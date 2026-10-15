@@ -43,9 +43,11 @@ import type {
 } from './types'
 
 const panelThemeStorageKey = 'poke-panel-theme'
+const panelUiThemeStorageKey = 'poke-panel-ui-theme'
 const panelSubmitShortcutStorageKey = 'poke-panel-submit-shortcut'
 const outputAutoScrollThreshold = 32
 type PanelTheme = 'dark' | 'light'
+type PanelUiTheme = 'cli' | 'default' | 'tech'
 type PanelSubmitShortcut = 'enter' | 'modifier-enter'
 
 function readPanelStoredTheme() {
@@ -65,6 +67,29 @@ function savePanelTheme(value: PanelTheme) {
   try {
     window.localStorage.setItem(panelThemeStorageKey, value)
     globalThis.pokeRememberSetting?.(panelThemeStorageKey, value)
+  } catch {
+    // Ignore storage restrictions in embedded browsers.
+  }
+}
+
+function readStoredPanelUiTheme() {
+  try {
+    const value = window.localStorage.getItem(panelUiThemeStorageKey)
+    return value === 'cli' || value === 'tech' || value === 'default' ? value : ''
+  } catch {
+    return ''
+  }
+}
+
+// The browser copy wins; without one the bundler config's `theme` starts the skin.
+function readPanelUiTheme(fallback: PanelUiTheme): PanelUiTheme {
+  return readStoredPanelUiTheme() || fallback
+}
+
+function savePanelUiTheme(value: PanelUiTheme) {
+  try {
+    window.localStorage.setItem(panelUiThemeStorageKey, value)
+    globalThis.pokeRememberSetting?.(panelUiThemeStorageKey, value)
   } catch {
     // Ignore storage restrictions in embedded browsers.
   }
@@ -237,6 +262,8 @@ function panelMatchesSubmitShortcut(
 
 type PanelViewProps = {
   defaultProxy: string
+  /** Panel skin until the user switches one in settings. */
+  defaultUiTheme: PanelUiTheme
   /** Resolved UI language; passed in so memoized labels re-render on a switch. */
   locale: Locale
   localePreference: LocalePreference
@@ -835,6 +862,7 @@ export function PanelView(props: PanelViewProps & { getDisplayPath: (path: strin
   const [agentPromptTurnIndex, setAgentPromptTurnIndex] = useState<number | undefined>(undefined)
   const [outputDetachedFromBottom, setOutputDetachedFromBottom] = useState(false)
   const [theme, setTheme] = useState<PanelTheme>(() => readPanelTheme())
+  const [uiTheme, setUiTheme] = useState<PanelUiTheme>(() => readPanelUiTheme(props.defaultUiTheme))
   const [submitShortcut, setSubmitShortcut] = useState<PanelSubmitShortcut>(() => readPanelSubmitShortcut())
   const [, setClockTick] = useState(0)
   const settingsRef = useRef<HTMLDivElement>(null)
@@ -1048,6 +1076,11 @@ export function PanelView(props: PanelViewProps & { getDisplayPath: (path: strin
   function handleThemeChange(next: PanelTheme) {
     setTheme(next)
     savePanelTheme(next)
+  }
+
+  function handleUiThemeChange(next: PanelUiTheme) {
+    setUiTheme(next)
+    savePanelUiTheme(next)
   }
 
   function handleOutputScroll() {
@@ -1642,6 +1675,21 @@ export function PanelView(props: PanelViewProps & { getDisplayPath: (path: strin
                 <h3 className="poke-settings-group-title">{t('settings.general')}</h3>
                 <div className="poke-settings-card">
                   <div className="poke-settings-row">
+                    <span className="poke-settings-label">{t('settings.uiTheme')}</span>
+                    {renderSegmented<PanelUiTheme>(
+                      'ui-theme',
+                      t('settings.uiTheme'),
+                      [
+                        { label: t('settings.uiThemeDefault'), value: 'default' },
+                        { label: t('settings.uiThemeTech'), value: 'tech' },
+                        { label: t('settings.uiThemeCli'), value: 'cli' },
+                      ],
+                      uiTheme,
+                      handleUiThemeChange,
+                      true,
+                    )}
+                  </div>
+                  <div className="poke-settings-row">
                     <span className="poke-settings-label">{t('settings.theme')}</span>
                     {renderSegmented<PanelTheme>(
                       'theme',
@@ -2174,7 +2222,7 @@ export function PanelView(props: PanelViewProps & { getDisplayPath: (path: strin
   }
 
   return (
-    <div className="poke-panel" data-busy={runs.some(panelIsRunWorking)} data-theme={theme} lang={locale} ref={panelSizeRef}>
+    <div className="poke-panel" data-busy={runs.some(panelIsRunWorking)} data-theme={theme} data-ui-theme={uiTheme} lang={locale} ref={panelSizeRef}>
       <div className="poke-body">
         <aside aria-label={t('sidebar.history')} className="poke-sidebar">
           {/* The brand heads the sidebar; its bottom edge lines up with the chat header's. */}

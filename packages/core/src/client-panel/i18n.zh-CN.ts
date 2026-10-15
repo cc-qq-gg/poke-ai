@@ -236,6 +236,11 @@ export const zhCN = {
   'settings.theme': '主题',
   'settings.themeDark': '深色',
   'settings.themeLight': '浅色',
+  /* Panel skins (the look), separate from the dark / light brightness above. */
+  'settings.uiTheme': '皮肤',
+  'settings.uiThemeDefault': '默认',
+  'settings.uiThemeTech': '科技',
+  'settings.uiThemeCli': 'CLI',
   'settings.language': '语言',
   'settings.languageAuto': '跟随浏览器',
 

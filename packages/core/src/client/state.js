@@ -3,6 +3,8 @@ const base = __POKE_BASE__
 const defaultProxy = __POKE_AGENT_PROXY__
 const agentProviders = __POKE_AGENT_PROVIDERS__
 const defaultAgentProviderId = __POKE_DEFAULT_AGENT_PROVIDER__
+// Starting panel skin from the bundler config (`theme` option); the user's own pick wins.
+const defaultUiTheme = __POKE_UI_THEME__
 const targetAttribute = 'data-poke-target'
 const sourceAttribute = 'data-poke-source'
 const sourceRangeAttribute = 'data-poke-source-range'

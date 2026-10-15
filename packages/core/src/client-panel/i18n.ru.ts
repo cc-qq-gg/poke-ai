@@ -250,6 +250,11 @@ export const ru: MessageCatalog = {
   'settings.theme': 'Тема',
   'settings.themeDark': 'Тёмная',
   'settings.themeLight': 'Светлая',
+  /* Panel skins (the look), separate from the dark / light brightness above. */
+  'settings.uiTheme': 'Оформление',
+  'settings.uiThemeDefault': 'По умолчанию',
+  'settings.uiThemeTech': 'Технологичное',
+  'settings.uiThemeCli': 'CLI',
   'settings.language': 'Язык',
   'settings.languageAuto': 'Как в браузере',
 

@@ -236,6 +236,11 @@ export const en: MessageCatalog = {
   'settings.theme': 'Theme',
   'settings.themeDark': 'Dark',
   'settings.themeLight': 'Light',
+  /* Panel skins (the look), separate from the dark / light brightness above. */
+  'settings.uiTheme': 'Appearance',
+  'settings.uiThemeDefault': 'Default',
+  'settings.uiThemeTech': 'Tech',
+  'settings.uiThemeCli': 'CLI',
   'settings.language': 'Language',
   'settings.languageAuto': 'Follow browser',
 

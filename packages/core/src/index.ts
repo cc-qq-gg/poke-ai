@@ -74,6 +74,7 @@ export function getPokeClientCode(input: {
     .replace('__POKE_BASE__', JSON.stringify(input.base ?? '/'))
     .replace('__POKE_AGENT_PROXY__', JSON.stringify(getConfiguredCodexProxy(pluginProxy)))
     .replace('__POKE_AGENT_PROVIDERS__', JSON.stringify(agentProviders))
+    .replace('__POKE_UI_THEME__', JSON.stringify(options.theme ?? 'default'))
     .replace(
       '__POKE_DEFAULT_AGENT_PROVIDER__',
       JSON.stringify(getDefaultAgentProviderId(agentProviders, input.defaultProvider ?? options.agents?.defaultProvider)),

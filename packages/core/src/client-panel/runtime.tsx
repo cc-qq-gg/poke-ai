@@ -47,6 +47,7 @@ type AgentTurnResult = {
 
 declare const defaultAgentProviderId: string
 declare const defaultProxy: string
+declare const defaultUiTheme: 'cli' | 'default' | 'tech'
 declare let pokePanel: HTMLElement | undefined
 declare let continueTarget: { layer: LayerTarget; layers: LayerTarget[] } | undefined
 declare let dockButton: HTMLButtonElement | undefined
@@ -390,6 +391,7 @@ function renderPokePanel() {
     <PanelView
       key={settingsVersion}
       defaultProxy={defaultProxy}
+      defaultUiTheme={defaultUiTheme}
       locale={getLocale()}
       localePreference={getLocalePreference()}
       onLocaleChange={setLocalePreference}
@@ -699,6 +701,20 @@ function markOpenConversationSeen() {
  * only way to start one without picking an element. It waits for the first
  * history fetch so it does not flash the empty look before turning into a count.
  */
+/**
+ * The dock carries the picked skin too, so its brand tile glows (tech) or
+ * squares off (cli) exactly like the panel header; the panel owns switching,
+ * the dock just copies what localStorage holds when it is (re)built.
+ */
+function readStoredPanelUiTheme(fallback: 'cli' | 'default' | 'tech'): 'cli' | 'default' | 'tech' {
+  try {
+    const value = window.localStorage.getItem('poke-panel-ui-theme')
+    return value === 'cli' || value === 'tech' || value === 'default' ? value : fallback
+  } catch {
+    return fallback
+  }
+}
+
 function ensureDockButton() {
   if (dockButton || !runsHydrated || pokePanel) {
     return
@@ -706,6 +722,7 @@ function ensureDockButton() {
 
   dockButton = createElement('button', 'poke-dock') as HTMLButtonElement
   dockButton.type = 'button'
+  dockButton.dataset.uiTheme = readStoredPanelUiTheme(defaultUiTheme)
   dockButton.addEventListener('click', (event) => {
     if (suppressDockClick) {
       event.preventDefault()

@@ -293,6 +293,15 @@ export type PokePluginOptions = {
    * Disable source attributes when they would conflict with framework SSR hydration.
    */
   disableSourceAttributes?: boolean
+  /**
+   * Panel visual skin, independent of the light / dark brightness the user
+   * picks in settings. `default` is the neutral ChatGPT-style look, `tech` a
+   * neon glass theme, `cli` a monospace terminal theme. The user can still
+   * switch skins in the settings panel; this only sets the starting skin.
+   *
+   * @default 'default'
+   */
+  theme?: 'cli' | 'default' | 'tech'
   proxy?: string
   /**
    * Repository root that Poke agents are allowed to inspect and edit.

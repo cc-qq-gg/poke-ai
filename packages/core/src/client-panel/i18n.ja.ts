@@ -231,6 +231,11 @@ export const ja: MessageCatalog = {
   'settings.theme': 'テーマ',
   'settings.themeDark': 'ダーク',
   'settings.themeLight': 'ライト',
+  /* Panel skins (the look), separate from the dark / light brightness above. */
+  'settings.uiTheme': 'テーマ',
+  'settings.uiThemeDefault': 'デフォルト',
+  'settings.uiThemeTech': 'テック',
+  'settings.uiThemeCli': 'CLI',
   'settings.language': '言語',
   'settings.languageAuto': 'ブラウザーの言語に合わせる',
 

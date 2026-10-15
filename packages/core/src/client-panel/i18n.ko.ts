@@ -231,6 +231,11 @@ export const ko: MessageCatalog = {
   'settings.theme': '테마',
   'settings.themeDark': '다크',
   'settings.themeLight': '라이트',
+  /* Panel skins (the look), separate from the dark / light brightness above. */
+  'settings.uiTheme': '스킨',
+  'settings.uiThemeDefault': '기본',
+  'settings.uiThemeTech': '기술',
+  'settings.uiThemeCli': 'CLI',
   'settings.language': '언어',
   'settings.languageAuto': '브라우저 언어 따르기',
 

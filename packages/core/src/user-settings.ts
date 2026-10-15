@@ -18,9 +18,10 @@ export type PokeUserSettings = {
   proxyMode?: string
   submitShortcut?: string
   theme?: string
+  uiTheme?: string
 }
 
-const stringKeys = ['locale', 'permissionMode', 'provider', 'proxy', 'proxyMode', 'submitShortcut', 'theme'] as const
+const stringKeys = ['locale', 'permissionMode', 'provider', 'proxy', 'proxyMode', 'submitShortcut', 'theme', 'uiTheme'] as const
 const maxValueLength = 2000
 
 export function getUserSettingsPath() {

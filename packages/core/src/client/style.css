@@ -3555,3 +3555,127 @@
     color: var(--poke-text);
   }
 }
+
+/* ------------------------------------------------------------------ skins */
+
+/*
+ * Panel skins picked in settings (or by the bundler config's `theme`), on the
+ * panel's `data-ui-theme` attribute. They sit orthogonal to the dark / light
+ * brightness above: `tech` only re-tints accents and effects, `cli` is a whole
+ * terminal look — monospace, square corners, phosphor on graphite — and wins
+ * over the brightness copy, like an app that ignores the system theme.
+ * Rule order mirrors token order, so the last block wins on shared tokens.
+ */
+
+.poke-panel[data-ui-theme="tech"] {
+  --poke-accent: #22d3ee;
+  --poke-accent-strong: #67e8f9;
+  --poke-accent-soft: rgba(34, 211, 238, 0.14);
+  --poke-accent-ring: rgba(34, 211, 238, 0.32);
+  --poke-focus-border: rgba(34, 211, 238, 0.55);
+  --poke-on-accent: #04121a;
+  --poke-success: #34e5a1;
+  --poke-success-soft: rgba(52, 229, 161, 0.12);
+  --poke-border-strong: color-mix(in srgb, #22d3ee 22%, var(--poke-border));
+}
+
+/* The brand tile becomes the one lit device in the room. */
+.poke-panel[data-ui-theme="tech"] .poke-brand-mark,
+.poke-dock[data-ui-theme="tech"] .poke-brand-mark {
+  background: #04121a;
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.4),
+    0 0 14px -2px rgba(34, 211, 238, 0.55);
+  color: #67e8f9;
+}
+
+/* Neon edges on the main surfaces; the rest of the layout is untouched. */
+.poke-panel[data-ui-theme="tech"] .poke-composer,
+.poke-panel[data-ui-theme="tech"] .poke-settings-popover,
+.poke-panel[data-ui-theme="tech"] .poke-dropdown-menu {
+  border-color: rgba(34, 211, 238, 0.28);
+  box-shadow:
+    0 4px 24px -8px rgba(0, 0, 0, 0.5),
+    0 0 18px -6px rgba(34, 211, 238, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.poke-panel[data-ui-theme="tech"] .poke-button-primary {
+  box-shadow: 0 0 12px -2px rgba(34, 211, 238, 0.65);
+}
+
+/* An idle poke is slow; a working one pings twice as fast, like a radar. */
+.poke-panel[data-ui-theme="tech"] .poke-brand-ring {
+  animation-duration: 3.6s;
+}
+
+.poke-panel[data-ui-theme="tech"][data-busy="true"] .poke-brand-ring,
+.poke-dock[data-ui-theme="tech"].poke-dock-running .poke-brand-ring {
+  animation-duration: 0.9s;
+}
+
+.poke-panel[data-ui-theme="cli"] {
+  --poke-radius-sm: 2px;
+  --poke-radius-md: 3px;
+  --poke-radius-lg: 4px;
+
+  /* A graphite terminal with green phosphor; brightness settings do not apply. */
+  --poke-bg: #0a0f0a;
+  --poke-bg-subtle: #070b07;
+  --poke-surface: #101610;
+  --poke-surface-raised: #162016;
+  --poke-bubble: #131b13;
+  --poke-surface-hover: rgba(110, 231, 138, 0.08);
+  --poke-surface-active: rgba(110, 231, 138, 0.12);
+  --poke-border: rgba(110, 231, 138, 0.18);
+  --poke-border-strong: rgba(110, 231, 138, 0.32);
+  --poke-text: #b7f7c3;
+  --poke-text-secondary: #6aa772;
+  --poke-text-tertiary: #4c7a52;
+  --poke-accent: #8ef09a;
+  --poke-accent-strong: #b7f7c3;
+  --poke-accent-soft: rgba(142, 240, 154, 0.12);
+  --poke-accent-ring: rgba(142, 240, 154, 0.3);
+  --poke-focus-border: rgba(142, 240, 154, 0.55);
+  --poke-on-accent: #04180a;
+  --poke-success: #8ef09a;
+  --poke-warning: #f5b83d;
+  --poke-danger: #ff7a6e;
+  --poke-scrollbar: rgba(110, 231, 138, 0.22);
+  --poke-scrollbar-hover: rgba(110, 231, 138, 0.4);
+  color-scheme: dark;
+
+  /* The whole UI, including the chat copy, sets in mono. */
+  font-family: var(--poke-mono);
+  text-shadow: 0 0 6px rgba(142, 240, 154, 0.18);
+}
+
+/* The tile reads as a text character block: flat, one hard border. */
+.poke-panel[data-ui-theme="cli"] .poke-brand-mark,
+.poke-dock[data-ui-theme="cli"] .poke-brand-mark {
+  --poke-mark-radius: 2px;
+  border: 1px solid rgba(142, 240, 154, 0.5);
+  border-radius: 2px;
+  background: #04180a;
+  box-shadow: none;
+  color: #8ef09a;
+}
+
+/* Square corners ride along on everything rounded by the tokens. */
+.poke-panel[data-ui-theme="cli"] .poke-button,
+.poke-panel[data-ui-theme="cli"] .poke-textarea,
+.poke-panel[data-ui-theme="cli"] .poke-composer {
+  border-radius: var(--poke-radius-sm);
+}
+
+.poke-panel[data-ui-theme="cli"] .poke-brand-ring {
+  animation-duration: 1.2s;
+  animation-timing-function: steps(2, end);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .poke-panel[data-ui-theme="tech"] .poke-brand-ring,
+  .poke-panel[data-ui-theme="cli"] .poke-brand-ring {
+    animation: none;
+  }
+}

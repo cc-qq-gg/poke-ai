@@ -236,6 +236,11 @@ export const ptBR: MessageCatalog = {
   'settings.theme': 'Tema',
   'settings.themeDark': 'Escuro',
   'settings.themeLight': 'Claro',
+  /* Panel skins (the look), separate from the dark / light brightness above. */
+  'settings.uiTheme': 'Aparência',
+  'settings.uiThemeDefault': 'Padrão',
+  'settings.uiThemeTech': 'Tech',
+  'settings.uiThemeCli': 'CLI',
   'settings.language': 'Idioma',
   'settings.languageAuto': 'Seguir o navegador',
 
