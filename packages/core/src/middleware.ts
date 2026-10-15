@@ -4,14 +4,14 @@ import { getOpenInEditorCommand, resolveCommand, resolveLaunchEditor, shouldUseS
 import { getClientAgentProviders, getDefaultAgentProviderId, resolveAgentProviders } from './providers'
 import { getConfiguredCodexProxy, normalizeProxy } from './proxy'
 import {
-  appendAiInsRunTurn,
-  aiInsRuns,
-  bumpAiInsRunsVersion,
-  getAiInsRunsVersion,
-  createAiInsRun,
-  getAiInsRunResumeBlockedCode,
-  getAiInsRunSummary,
-  sendAiInsEvent,
+  appendPokeRunTurn,
+  pokeRuns,
+  bumpPokeRunsVersion,
+  getPokeRunsVersion,
+  createPokeRun,
+  getPokeRunResumeBlockedCode,
+  getPokeRunSummary,
+  sendPokeEvent,
 } from './run-store'
 import {
   applyPermissionArgs,
@@ -22,7 +22,7 @@ import {
   resolvePermissionMode,
 } from './permissions'
 import { getWorkspaceFilePatch, listWorkspaceChanges, setWorkspaceFilesStaged } from './workspace-changes'
-import { ensureAiInsRunHistoryLoaded, getAiInsRunActivityAt, persistAiInsRun, pruneAiInsRunHistory, removeAiInsRunHistory } from './run-history'
+import { ensurePokeRunHistoryLoaded, getPokeRunActivityAt, persistPokeRun, prunePokeRunHistory, removePokeRunHistory } from './run-history'
 import {
   buildAgentPrompt,
   buildFollowUpAgentPrompt,
@@ -40,12 +40,12 @@ import { spawn } from 'child_process'
 import { existsSync, mkdirSync } from 'fs'
 import { dirname, join } from 'path'
 import type { ServerResponse } from 'http'
-import type { AiInsMiddleware, AiInsPluginOptions, AiInsRun, ResolvedAiInsAgentProvider } from './types'
+import type { PokeMiddleware, PokePluginOptions, PokeRun, ResolvedPokeAgentProvider } from './types'
 
 
-type AiInsProxyMode = 'custom' | 'off' | 'system'
+type PokeProxyMode = 'custom' | 'off' | 'system'
 
-function parseProxyMode(value: unknown): AiInsProxyMode | undefined {
+function parseProxyMode(value: unknown): PokeProxyMode | undefined {
   return value === 'custom' || value === 'off' || value === 'system' ? value : undefined
 }
 
@@ -61,7 +61,7 @@ function getRevealInFolderCommand(fileName: string) {
   return { args: [dirname(fileName)], command: 'xdg-open' }
 }
 
-export function aiInsEventsMiddleware(root?: string): AiInsMiddleware {
+export function pokeEventsMiddleware(root?: string): PokeMiddleware {
   return (req, res) => {
     if (req.method !== 'GET') {
       res.statusCode = 405
@@ -70,16 +70,16 @@ export function aiInsEventsMiddleware(root?: string): AiInsMiddleware {
     }
 
     if (root) {
-      ensureAiInsRunHistoryLoaded(root)
+      ensurePokeRunHistoryLoaded(root)
     }
 
     const requestUrl = req.url ? new URL(req.url, 'http://localhost') : null
     const runId = requestUrl?.searchParams.get('id') || ''
-    const run = aiInsRuns.get(runId)
+    const run = pokeRuns.get(runId)
 
     if (!run) {
       res.statusCode = 404
-      res.end('AI Ins run not found')
+      res.end('Poke run not found')
       return
     }
 
@@ -98,7 +98,7 @@ export function aiInsEventsMiddleware(root?: string): AiInsMiddleware {
     run.subscribers.add(res)
     for (const event of run.events) {
       if ((event.seq ?? 0) > since) {
-        sendAiInsEvent(res, event)
+        sendPokeEvent(res, event)
       }
     }
 
@@ -114,7 +114,7 @@ export function aiInsEventsMiddleware(root?: string): AiInsMiddleware {
   }
 }
 
-function stopAndForgetRun(runId: string, run: AiInsRun) {
+function stopAndForgetRun(runId: string, run: PokeRun) {
   if (!run.completed) {
     run.child?.kill('SIGTERM')
   }
@@ -125,15 +125,15 @@ function stopAndForgetRun(runId: string, run: AiInsRun) {
     subscriber.end()
   }
 
-  aiInsRuns.delete(runId)
-  removeAiInsRunHistory(runId, run)
-  bumpAiInsRunsVersion()
+  pokeRuns.delete(runId)
+  removePokeRunHistory(runId, run)
+  bumpPokeRunsVersion()
 }
 
 // Give the agent a moment to exit cleanly on SIGTERM before forcing it.
 const stopGraceMs = 4000
 
-function stopRunningTurn(run: AiInsRun) {
+function stopRunningTurn(run: PokeRun) {
   const child = run.child
   if (run.completed || !child) {
     return false
@@ -161,20 +161,20 @@ function sendPanelError(res: ServerResponse, error: string, params: Record<strin
   res.end(JSON.stringify({ error, params }))
 }
 
-export function aiInsRunsMiddleware(root: string): AiInsMiddleware {
+export function pokeRunsMiddleware(root: string): PokeMiddleware {
   return (req, res) => {
     const requestUrl = req.url ? new URL(req.url, 'http://localhost') : null
     const runId = requestUrl?.searchParams.get('id') || ''
-    ensureAiInsRunHistoryLoaded(root)
+    ensurePokeRunHistoryLoaded(root)
 
     if (req.method === 'GET') {
       res.setHeader('Content-Type', 'application/json')
 
       if (runId) {
-        const run = aiInsRuns.get(runId)
+        const run = pokeRuns.get(runId)
         if (!run || run.root !== root) {
           res.statusCode = 404
-          res.end(JSON.stringify({ message: 'AI Ins run not found' }))
+          res.end(JSON.stringify({ message: 'Poke run not found' }))
           return
         }
 
@@ -192,11 +192,11 @@ export function aiInsRunsMiddleware(root: string): AiInsMiddleware {
           return
         }
 
-        res.end(JSON.stringify({ run: getAiInsRunSummary(runId, run, root) }))
+        res.end(JSON.stringify({ run: getPokeRunSummary(runId, run, root) }))
         return
       }
 
-      const version = getAiInsRunsVersion()
+      const version = getPokeRunsVersion()
       if (requestUrl?.searchParams.get('version') === String(version)) {
         res.end(JSON.stringify({ unchanged: true, version }))
         return
@@ -205,20 +205,20 @@ export function aiInsRunsMiddleware(root: string): AiInsMiddleware {
       // Only live runs carry their output in the list: the panel streams those
       // and needs a consistent starting point. Settled transcripts can be large
       // and are fetched one at a time when the user opens them.
-      const runs = [...aiInsRuns.entries()]
+      const runs = [...pokeRuns.entries()]
         .filter(([, run]) => run.root === root)
-        .sort(([, firstRun], [, secondRun]) => getAiInsRunActivityAt(secondRun) - getAiInsRunActivityAt(firstRun))
-        .map(([id, run]) => getAiInsRunSummary(id, run, root, !run.completed))
+        .sort(([, firstRun], [, secondRun]) => getPokeRunActivityAt(secondRun) - getPokeRunActivityAt(firstRun))
+        .map(([id, run]) => getPokeRunSummary(id, run, root, !run.completed))
 
       res.end(JSON.stringify({ runs, version }))
       return
     }
 
     if (req.method === 'POST' && requestUrl?.searchParams.get('action') === 'stop') {
-      const run = aiInsRuns.get(runId)
+      const run = pokeRuns.get(runId)
       if (!run || run.root !== root) {
         res.statusCode = 404
-        res.end('AI Ins run not found')
+        res.end('Poke run not found')
         return
       }
 
@@ -235,16 +235,16 @@ export function aiInsRunsMiddleware(root: string): AiInsMiddleware {
 
     const pinAction = requestUrl?.searchParams.get('action')
     if (req.method === 'POST' && (pinAction === 'pin' || pinAction === 'unpin')) {
-      const run = aiInsRuns.get(runId)
+      const run = pokeRuns.get(runId)
       if (!run || run.root !== root) {
         res.statusCode = 404
-        res.end('AI Ins run not found')
+        res.end('Poke run not found')
         return
       }
 
       run.pinnedAt = pinAction === 'pin' ? Date.now() : undefined
-      bumpAiInsRunsVersion()
-      persistAiInsRun(runId)
+      bumpPokeRunsVersion()
+      persistPokeRun(runId)
       res.setHeader('Content-Type', 'application/json')
       res.end(JSON.stringify({ pinnedAt: run.pinnedAt ?? null, success: true }))
       return
@@ -253,7 +253,7 @@ export function aiInsRunsMiddleware(root: string): AiInsMiddleware {
     if (req.method === 'DELETE') {
       if (requestUrl?.searchParams.get('scope') === 'finished') {
         const removedIds: string[] = []
-        for (const [id, run] of [...aiInsRuns.entries()]) {
+        for (const [id, run] of [...pokeRuns.entries()]) {
           // Pinned conversations are kept on purpose; only delete them one by one.
           if (run.root === root && run.completed && !run.pinnedAt) {
             stopAndForgetRun(id, run)
@@ -266,11 +266,11 @@ export function aiInsRunsMiddleware(root: string): AiInsMiddleware {
         return
       }
 
-      const run = aiInsRuns.get(runId)
+      const run = pokeRuns.get(runId)
 
       if (!run || run.root !== root) {
         res.statusCode = 404
-        res.end('AI Ins run not found')
+        res.end('Poke run not found')
         return
       }
 
@@ -285,7 +285,7 @@ export function aiInsRunsMiddleware(root: string): AiInsMiddleware {
   }
 }
 
-export function aiInsConfigMiddleware(root: string, options: AiInsPluginOptions, pluginProxy: string): AiInsMiddleware {
+export function pokeConfigMiddleware(root: string, options: PokePluginOptions, pluginProxy: string): PokeMiddleware {
   return (_req, res) => {
     const providers = getClientAgentProviders(root, options, pluginProxy)
 
@@ -301,7 +301,7 @@ export function aiInsConfigMiddleware(root: string, options: AiInsPluginOptions,
   }
 }
 
-type AiInsAgentRequest = {
+type PokeAgentRequest = {
   file?: unknown
   layers?: unknown
   /** Address of the page the panel was opened on; context for element-less requests. */
@@ -316,7 +316,7 @@ type AiInsAgentRequest = {
 
 type RequestProxyResult = { ok: false; message: string } | { ok: true; proxy: string; proxyModeSet: boolean }
 
-function resolveRequestProxy(payload: AiInsAgentRequest, provider: ResolvedAiInsAgentProvider): RequestProxyResult {
+function resolveRequestProxy(payload: PokeAgentRequest, provider: ResolvedPokeAgentProvider): RequestProxyResult {
   const proxyMode = parseProxyMode(payload.proxyMode)
   const requestedProxy = normalizeProxy(payload.proxy)
 
@@ -390,7 +390,7 @@ function toPromptTarget(target: ResolvedAgentTarget, root: string) {
   }
 }
 
-export function aiInsEditMiddleware(root: string, options: AiInsPluginOptions, pluginProxy: string): AiInsMiddleware {
+export function pokeEditMiddleware(root: string, options: PokePluginOptions, pluginProxy: string): PokeMiddleware {
   return async (req, res) => {
     if (req.method !== 'POST') {
       res.statusCode = 405
@@ -400,7 +400,7 @@ export function aiInsEditMiddleware(root: string, options: AiInsPluginOptions, p
 
     try {
       const body = await readRequestBody(req)
-      const payload = JSON.parse(body || '{}') as AiInsAgentRequest
+      const payload = JSON.parse(body || '{}') as PokeAgentRequest
       const rawTarget = typeof payload.file === 'string' ? payload.file : ''
       const rawPrompt = typeof payload.prompt === 'string' ? payload.prompt.trim() : ''
       const resumeRunId = typeof payload.resumeRunId === 'string' ? payload.resumeRunId.trim() : ''
@@ -411,11 +411,11 @@ export function aiInsEditMiddleware(root: string, options: AiInsPluginOptions, p
         return
       }
 
-      ensureAiInsRunHistoryLoaded(root)
-      const existingRun = resumeRunId ? aiInsRuns.get(resumeRunId) : undefined
+      ensurePokeRunHistoryLoaded(root)
+      const existingRun = resumeRunId ? pokeRuns.get(resumeRunId) : undefined
       if (resumeRunId && (!existingRun || existingRun.root !== root)) {
         res.statusCode = 404
-        res.end('AI Ins run not found')
+        res.end('Poke run not found')
         return
       }
 
@@ -431,7 +431,7 @@ export function aiInsEditMiddleware(root: string, options: AiInsPluginOptions, p
 
       if (!provider) {
         res.statusCode = 400
-        res.end(`unknown AI Ins agent provider: ${requestedProviderId}`)
+        res.end(`unknown Poke agent provider: ${requestedProviderId}`)
         return
       }
 
@@ -458,7 +458,7 @@ export function aiInsEditMiddleware(root: string, options: AiInsPluginOptions, p
       }
 
       if (existingRun) {
-        const blockedCode = getAiInsRunResumeBlockedCode(existingRun)
+        const blockedCode = getPokeRunResumeBlockedCode(existingRun)
         if (blockedCode) {
           sendPanelError(res, blockedCode, { provider: existingRun.providerLabel })
           return
@@ -489,7 +489,7 @@ export function aiInsEditMiddleware(root: string, options: AiInsPluginOptions, p
           turnNumber: existingRun.turns.length + 1,
         })
 
-        const turn = appendAiInsRunTurn(resumeRunId, existingRun, {
+        const turn = appendPokeRunTurn(resumeRunId, existingRun, {
           agentPrompt: followUpPrompt,
           fileName: targetChanged && target ? target.fileName : existingRun.sourcePath,
           lineNumber: targetChanged && target ? target.lineNumber : existingRun.lineNumber,
@@ -556,7 +556,7 @@ export function aiInsEditMiddleware(root: string, options: AiInsPluginOptions, p
       const prompt = target
         ? buildAgentPrompt({ ...toPromptTarget(target, root), rawPrompt })
         : buildWorkspaceAgentPrompt({ pageUrl, rawPrompt, root })
-      const logDirectory = join(root, '.ai-ins')
+      const logDirectory = join(root, '.poke')
       mkdirSync(logDirectory, { recursive: true })
       const runId = `${new Date().toISOString().replace(/[:.]/gu, '-')}-${provider.id}`
       const logPath = join(logDirectory, `${runId}.log`)
@@ -568,7 +568,7 @@ export function aiInsEditMiddleware(root: string, options: AiInsPluginOptions, p
         ? [...applySessionIdToArgs(provider.session.assignArgs, sessionId), ...provider.args]
         : [...provider.args]
 
-      const run = createAiInsRun(runId, root, logPath, provider, provider.session.mode, sessionId, {
+      const run = createPokeRun(runId, root, logPath, provider, provider.session.mode, sessionId, {
         agentPrompt: prompt,
         fileName: target?.fileName ?? '',
         lineNumber: target?.lineNumber ?? 0,
@@ -578,7 +578,7 @@ export function aiInsEditMiddleware(root: string, options: AiInsPluginOptions, p
         sourceName: target?.sourceName ?? '',
         sourcePath: target?.fileName ?? '',
       })
-      pruneAiInsRunHistory(root)
+      prunePokeRunHistory(root)
       // After the run exists: the permission bridge config carries its token.
       const args = applyPermissionArgs(baseArgs, provider, permissionMode, getPermissionMcpConfig(req, runId, run))
 
@@ -617,14 +617,14 @@ export function aiInsEditMiddleware(root: string, options: AiInsPluginOptions, p
       )
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error)
-      console.error('[ai-ins] AI Ins agent failed:', message)
+      console.error('[poke] Poke agent failed:', message)
       res.statusCode = 500
       res.end(message)
     }
   }
 }
 
-export function openInEditorMiddleware(root: string): AiInsMiddleware {
+export function openInEditorMiddleware(root: string): PokeMiddleware {
   return (req, res) => {
     const requestUrl = req.url ? new URL(req.url, 'http://localhost') : null
     const rawTarget = requestUrl?.searchParams.get('file')
@@ -664,7 +664,7 @@ export function openInEditorMiddleware(root: string): AiInsMiddleware {
       })
 
       child.on('error', (error) => {
-        console.error('[ai-ins] open in editor failed:', error.message)
+        console.error('[poke] open in editor failed:', error.message)
       })
 
       // The editor is detached, so a non-zero exit is the only signal that the
@@ -675,7 +675,7 @@ export function openInEditorMiddleware(root: string): AiInsMiddleware {
         }
 
         const invocation = [editorCommand.command, ...editorCommand.args].join(' ')
-        console.error(`[ai-ins] open in editor exited with code ${code}: ${invocation}${editorStderr.trim() ? `\n${editorStderr.trim()}` : ''}`)
+        console.error(`[poke] open in editor exited with code ${code}: ${invocation}${editorStderr.trim() ? `\n${editorStderr.trim()}` : ''}`)
       })
 
       // Node types the pipe as Readable, but it is a Socket at runtime; keeping
@@ -686,14 +686,14 @@ export function openInEditorMiddleware(root: string): AiInsMiddleware {
       res.end(JSON.stringify({ editor, fileName, lineNumber, columnNumber }))
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error)
-      console.error('[ai-ins] open in editor failed:', message)
+      console.error('[poke] open in editor failed:', message)
       res.statusCode = 500
       res.end(message)
     }
   }
 }
 
-export function revealInFolderMiddleware(root: string): AiInsMiddleware {
+export function revealInFolderMiddleware(root: string): PokeMiddleware {
   return (req, res) => {
     const requestUrl = req.url ? new URL(req.url, 'http://localhost') : null
     const rawTarget = requestUrl?.searchParams.get('file')
@@ -721,7 +721,7 @@ export function revealInFolderMiddleware(root: string): AiInsMiddleware {
       })
 
       child.on('error', (error) => {
-        console.error('[ai-ins] reveal in folder failed:', error.message)
+        console.error('[poke] reveal in folder failed:', error.message)
       })
 
       child.unref()
@@ -729,7 +729,7 @@ export function revealInFolderMiddleware(root: string): AiInsMiddleware {
       res.end(JSON.stringify({ command, fileName }))
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error)
-      console.error('[ai-ins] reveal in folder failed:', message)
+      console.error('[poke] reveal in folder failed:', message)
       res.statusCode = 500
       res.end(message)
     }
@@ -739,7 +739,7 @@ export function revealInFolderMiddleware(root: string): AiInsMiddleware {
 /** Which conversation last touched each file, by turn end time. */
 function getChangeAttribution(root: string) {
   const owners = new Map<string, { at: number; runId: string }>()
-  for (const [runId, run] of aiInsRuns) {
+  for (const [runId, run] of pokeRuns) {
     if (run.root !== root) continue
     for (const turn of run.turns) {
       const at = turn.completedAt ?? turn.createdAt
@@ -756,7 +756,7 @@ function getChangeAttribution(root: string) {
  * `GET` — every uncommitted file under the root, staged and unstaged, with the
  * conversation that last changed it. `GET ?file=&staged=` — that file's patch.
  */
-export function aiInsChangesMiddleware(root: string): AiInsMiddleware {
+export function pokeChangesMiddleware(root: string): PokeMiddleware {
   return async (req, res) => {
     if (req.method === 'POST') {
       // `POST ?action=stage|unstage` with `{ paths }`: only paths that are listed changes.
@@ -789,7 +789,7 @@ export function aiInsChangesMiddleware(root: string): AiInsMiddleware {
       return
     }
 
-    ensureAiInsRunHistoryLoaded(root)
+    ensurePokeRunHistoryLoaded(root)
     const requestUrl = new URL(req.url || '', 'http://localhost')
     const file = requestUrl.searchParams.get('file')
     const changes = await listWorkspaceChanges(root)

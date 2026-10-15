@@ -257,7 +257,7 @@ export const ko: MessageCatalog = {
   'settings.permissionFixed': '{provider}의 권한은 자체 시작 옵션에 의해 결정되며 여기의 설정은 적용되지 않습니다.',
   'turn.fullAccess': '전체 액세스',
   'dock.waitingPermission': '승인 대기 중인 대화 {count}개',
-  'dock.open': 'AI Ins 열기',
+  'dock.open': 'Poke 열기',
   'error.permissionGone': '이 권한 요청은 더 이상 유효하지 않습니다(Agent가 종료되었을 수 있습니다).',
   'error.diffGone': '이 파일의 diff를 더 이상 사용할 수 없습니다',
 
@@ -272,7 +272,7 @@ export const ko: MessageCatalog = {
   // Dock button
   'dock.running': '실행 중인 대화 {count}개',
   'dock.unread': '새 결과가 있는 대화 {count}개',
-  'dock.total': 'AI Ins 대화 {count}개',
+  'dock.total': 'Poke 대화 {count}개',
 
   // Live activity and reasoning
   'thinking.live': '생각하는 중',

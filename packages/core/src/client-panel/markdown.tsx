@@ -53,12 +53,12 @@ function CodeBlock({ code, language }: { code: string; language: string }) {
   const [copied, setCopied] = useState(false)
 
   return (
-    <div className="ai-ins-output-code-block">
-      <div className="ai-ins-output-code-head">
-        <span className="ai-ins-output-code-language">{language}</span>
+    <div className="poke-output-code-block">
+      <div className="poke-output-code-head">
+        <span className="poke-output-code-language">{language}</span>
         <button
           aria-label={copied ? t('markdown.copied') : t('markdown.copyCode')}
-          className={`ai-ins-output-code-copy${copied ? ' ai-ins-output-code-copy-done' : ''}`}
+          className={`poke-output-code-copy${copied ? ' poke-output-code-copy-done' : ''}`}
           onClick={() => {
             void copyText(code).then(() => {
               setCopied(true)
@@ -96,7 +96,7 @@ function renderInline(tokens: Token[] | undefined, keyPrefix: string, context: R
         // File paths are the most common thing an agent mentions; open them in one click.
         return context.onOpenFile && isFilePathLike(token.text) ? (
           <button
-            className="ai-ins-output-file-link"
+            className="poke-output-file-link"
             key={key}
             onClick={() => context.onOpenFile?.(token.text)}
             title={t('markdown.openFile', { path: token.text })}
@@ -164,7 +164,7 @@ function renderBlocks(tokens: Token[], keyPrefix: string, context: RenderContext
       case 'list': {
         const list = token as Tokens.List
         const items = list.items.map((item, itemIndex) => (
-          <li className={item.task ? 'ai-ins-output-task' : undefined} key={itemIndex}>
+          <li className={item.task ? 'poke-output-task' : undefined} key={itemIndex}>
             {item.task ? <input checked={Boolean(item.checked)} disabled type="checkbox" /> : null}
             {renderBlocks(item.tokens, `${key}.${itemIndex}`, context)}
           </li>
@@ -182,7 +182,7 @@ function renderBlocks(tokens: Token[], keyPrefix: string, context: RenderContext
         const align = (column: number) => table.align[column] ?? undefined
         return (
           // Wide tables scroll inside the card instead of stretching it.
-          <div className="ai-ins-output-table-wrap" key={key}>
+          <div className="poke-output-table-wrap" key={key}>
             <table>
               <thead>
                 <tr>
@@ -221,5 +221,5 @@ export function MarkdownView({ value, onOpenFile }: MarkdownViewProps) {
   const deferredValue = useDeferredValue(value)
   // `breaks`: agents write one thought per line; keep those line breaks.
   const tokens = useMemo(() => lexer(deferredValue, { breaks: true, gfm: true }), [deferredValue])
-  return <div className="ai-ins-output-markdown">{renderBlocks(tokens, 'md', { onOpenFile })}</div>
+  return <div className="poke-output-markdown">{renderBlocks(tokens, 'md', { onOpenFile })}</div>
 }

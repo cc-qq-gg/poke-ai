@@ -125,14 +125,14 @@ export function PanelSelect({ ariaLabel, block, disabled, options, placement = '
   }
 
   return (
-    <div className={`ai-ins-dropdown${block ? ' ai-ins-dropdown-block' : ''}`} ref={rootRef}>
+    <div className={`poke-dropdown${block ? ' poke-dropdown-block' : ''}`} ref={rootRef}>
       <button
         aria-activedescendant={open && activeIndex >= 0 ? `${listId}-${activeIndex}` : undefined}
         aria-controls={open ? listId : undefined}
         aria-expanded={open}
         aria-haspopup="listbox"
         aria-label={ariaLabel}
-        className={`ai-ins-dropdown-trigger${open ? ' ai-ins-dropdown-trigger-open' : ''}`}
+        className={`poke-dropdown-trigger${open ? ' poke-dropdown-trigger-open' : ''}`}
         disabled={disabled}
         onClick={() => (open ? setOpen(false) : openMenu())}
         onKeyDown={handleKeyDown}
@@ -140,18 +140,18 @@ export function PanelSelect({ ariaLabel, block, disabled, options, placement = '
         title={title}
         type="button"
       >
-        <span className="ai-ins-dropdown-value">{selected?.label ?? ''}</span>
+        <span className="poke-dropdown-value">{selected?.label ?? ''}</span>
         <Icon paths={chevronDownIcon} />
       </button>
       {open ? (
-        <ul aria-label={ariaLabel} className={`ai-ins-dropdown-menu ai-ins-dropdown-menu-${placement}`} id={listId} role="listbox">
+        <ul aria-label={ariaLabel} className={`poke-dropdown-menu poke-dropdown-menu-${placement}`} id={listId} role="listbox">
           {options.map((option, index) => (
             <li
               aria-disabled={option.disabled || undefined}
               aria-selected={option.value === value}
-              className={`ai-ins-dropdown-option${index === activeIndex ? ' ai-ins-dropdown-option-active' : ''}${
-                option.value === value ? ' ai-ins-dropdown-option-selected' : ''
-              }${option.disabled ? ' ai-ins-dropdown-option-disabled' : ''}`}
+              className={`poke-dropdown-option${index === activeIndex ? ' poke-dropdown-option-active' : ''}${
+                option.value === value ? ' poke-dropdown-option-selected' : ''
+              }${option.disabled ? ' poke-dropdown-option-disabled' : ''}`}
               id={`${listId}-${index}`}
               key={option.value}
               // Keep focus on the trigger so keyboard navigation keeps working.
@@ -163,9 +163,9 @@ export function PanelSelect({ ariaLabel, block, disabled, options, placement = '
               role="option"
               title={option.disabled ? option.hint : undefined}
             >
-              <span className="ai-ins-dropdown-check">{option.value === value ? <Icon paths={checkIcon} /> : null}</span>
-              <span className="ai-ins-dropdown-label">{option.label}</span>
-              {option.hint ? <span className="ai-ins-dropdown-hint">{option.hint}</span> : null}
+              <span className="poke-dropdown-check">{option.value === value ? <Icon paths={checkIcon} /> : null}</span>
+              <span className="poke-dropdown-label">{option.label}</span>
+              {option.hint ? <span className="poke-dropdown-hint">{option.hint}</span> : null}
             </li>
           ))}
         </ul>

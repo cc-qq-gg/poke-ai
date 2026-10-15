@@ -276,7 +276,7 @@ export const ru: MessageCatalog = {
   'settings.permissionFixed': 'Разрешения {provider} определяются его собственными параметрами запуска; этот параметр на него не влияет.',
   'turn.fullAccess': 'Полный доступ',
   'dock.waitingPermission': { one: '{count} диалог ожидает подтверждения', few: '{count} диалога ожидают подтверждения', many: '{count} диалогов ожидают подтверждения', other: '{count} диалога ожидает подтверждения' },
-  'dock.open': 'Открыть AI Ins',
+  'dock.open': 'Открыть Poke',
   'error.permissionGone': 'Этот запрос разрешения больше не действителен (возможно, Agent уже завершился).',
   'error.diffGone': 'Diff этого файла больше недоступен',
 
@@ -291,7 +291,7 @@ export const ru: MessageCatalog = {
   // Dock button
   'dock.running': { one: 'Выполняется {count} диалог', few: 'Выполняется {count} диалога', many: 'Выполняется {count} диалогов', other: 'Выполняется {count} диалога' },
   'dock.unread': { one: '{count} диалог с новым результатом', few: '{count} диалога с новым результатом', many: '{count} диалогов с новым результатом', other: '{count} диалога с новым результатом' },
-  'dock.total': { one: '{count} диалог AI Ins', few: '{count} диалога AI Ins', many: '{count} диалогов AI Ins', other: '{count} диалога AI Ins' },
+  'dock.total': { one: '{count} диалог Poke', few: '{count} диалога Poke', many: '{count} диалогов Poke', other: '{count} диалога Poke' },
 
   // Live activity and reasoning
   'thinking.live': 'Думает',

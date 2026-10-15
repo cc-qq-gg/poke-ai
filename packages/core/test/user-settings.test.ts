@@ -4,17 +4,17 @@ import { join } from 'path'
 import { afterAll, describe, expect, it } from 'vitest'
 import { getUserSettingsPath, readUserSettings, writeUserSettings } from '../src/user-settings'
 
-const directory = mkdtempSync(join(tmpdir(), 'ai-ins-settings-'))
+const directory = mkdtempSync(join(tmpdir(), 'poke-settings-'))
 const fileName = join(directory, 'nested', 'settings.json')
 
 afterAll(() => rmSync(directory, { force: true, recursive: true }))
 
 describe('user settings file', () => {
-  it('lives in ~/.ai-ins unless AI_INS_HOME moves it', () => {
-    expect(getUserSettingsPath()).toMatch(/[/\\]\.ai-ins[/\\]settings\.json$/u)
-    process.env.AI_INS_HOME = directory
+  it('lives in ~/.poke unless POKE_HOME moves it', () => {
+    expect(getUserSettingsPath()).toMatch(/[/\\]\.poke[/\\]settings\.json$/u)
+    process.env.POKE_HOME = directory
     expect(getUserSettingsPath()).toBe(join(directory, 'settings.json'))
-    delete process.env.AI_INS_HOME
+    delete process.env.POKE_HOME
   })
 
   it('reports a missing file, then merges partial updates', () => {

@@ -1,6 +1,7 @@
 import { type KeyboardEvent as ReactKeyboardEvent, type MouseEvent as ReactMouseEvent, type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   arrowDownIcon,
+  BrandGlyph,
   checkIcon,
   chevronDownIcon,
   chevronRightIcon,
@@ -41,8 +42,8 @@ import type {
   ProxyMode,
 } from './types'
 
-const panelThemeStorageKey = 'ai-ins-panel-theme'
-const panelSubmitShortcutStorageKey = 'ai-ins-panel-submit-shortcut'
+const panelThemeStorageKey = 'poke-panel-theme'
+const panelSubmitShortcutStorageKey = 'poke-panel-submit-shortcut'
 const outputAutoScrollThreshold = 32
 type PanelTheme = 'dark' | 'light'
 type PanelSubmitShortcut = 'enter' | 'modifier-enter'
@@ -63,7 +64,7 @@ function readPanelTheme(): PanelTheme {
 function savePanelTheme(value: PanelTheme) {
   try {
     window.localStorage.setItem(panelThemeStorageKey, value)
-    globalThis.aiInsRememberSetting?.(panelThemeStorageKey, value)
+    globalThis.pokeRememberSetting?.(panelThemeStorageKey, value)
   } catch {
     // Ignore storage restrictions in embedded browsers.
   }
@@ -94,7 +95,7 @@ function readPanelSubmitShortcut(): PanelSubmitShortcut {
 function savePanelSubmitShortcut(value: PanelSubmitShortcut) {
   try {
     window.localStorage.setItem(panelSubmitShortcutStorageKey, value)
-    globalThis.aiInsRememberSetting?.(panelSubmitShortcutStorageKey, value)
+    globalThis.pokeRememberSetting?.(panelSubmitShortcutStorageKey, value)
   } catch {
     // Ignore storage restrictions in embedded browsers.
   }
@@ -102,7 +103,7 @@ function savePanelSubmitShortcut(value: PanelSubmitShortcut) {
 
 type PanelSidebarView = 'changes' | 'runs'
 
-const panelSidebarViewStorageKey = 'ai-ins-sidebar-view'
+const panelSidebarViewStorageKey = 'poke-sidebar-view'
 
 function readPanelSidebarView(): PanelSidebarView {
   try {
@@ -131,7 +132,7 @@ function panelSplitPath(path: string): [string, string] {
   return index === -1 ? [path, ''] : [path.slice(index + 1), path.slice(0, index)]
 }
 
-const panelSizeStorageKey = 'ai-ins-panel-size'
+const panelSizeStorageKey = 'poke-panel-size'
 
 /**
  * Remember the size the user dragged the panel to. Only the size they asked
@@ -179,7 +180,7 @@ function usePanelRememberedSize() {
   return ref
 }
 
-const panelHelpSeenStorageKey = 'ai-ins-help-seen'
+const panelHelpSeenStorageKey = 'poke-help-seen'
 
 function readPanelHelpSeen() {
   try {
@@ -578,7 +579,7 @@ function panelFormatOutputForDisplay(value: string) {
     }
 
     // Permission decisions are recorded as tokens too, so history reads in the current language.
-    const permissionMatch = line.match(/^\[ai-ins:permission:(allow|always|deny|cancelled)\] (\S+)(?: (.+))?$/u)
+    const permissionMatch = line.match(/^\[poke:permission:(allow|always|deny|cancelled)\] (\S+)(?: (.+))?$/u)
     if (permissionMatch) {
       const recordKeys = { allow: 'permission.recordAllow', always: 'permission.recordAlways', cancelled: 'permission.recordCancelled', deny: 'permission.recordDeny' } as const
       const detail = permissionMatch[3] ? ` \`${permissionMatch[3].replace(/`/gu, "'")}\`` : ''
@@ -586,8 +587,8 @@ function panelFormatOutputForDisplay(value: string) {
       continue
     }
 
-    // Notices are tokens (`[ai-ins:notice:<name>]`) so they read in the panel's language.
-    const noticeMatch = line.match(/^\[ai-ins:notice:(\w+)\]$/u)
+    // Notices are tokens (`[poke:notice:<name>]`) so they read in the panel's language.
+    const noticeMatch = line.match(/^\[poke:notice:(\w+)\]$/u)
     if (noticeMatch) {
       const key = `notice.${noticeMatch[1]}`
       visibleLines.push(`> ${isMessageKey(key) ? t(key) : line}`)
@@ -626,13 +627,13 @@ function PanelOutputViewer({ live, onOpenFile, value }: { live: boolean; onOpenF
       {/* A running turn with only startup lines has nothing to say yet; the live line covers it. */}
       {live && !displayOutput.hasReply ? null : <MarkdownView onOpenFile={onOpenFile} value={displayOutput.markdown} />}
       {displayOutput.diagnostics.length ? (
-        <details className="ai-ins-output-diagnostics">
+        <details className="poke-output-diagnostics">
           <summary>{t('turn.diagnostics', { count: hiddenLogCount })}</summary>
           <ul>
             {displayOutput.diagnostics.map((diagnostic, index) => (
               <li key={index}>
                 <span>{diagnostic.message}</span>
-                {diagnostic.count > 1 ? <span className="ai-ins-output-diagnostic-count">×{diagnostic.count}</span> : null}
+                {diagnostic.count > 1 ? <span className="poke-output-diagnostic-count">×{diagnostic.count}</span> : null}
               </li>
             ))}
           </ul>
@@ -644,7 +645,7 @@ function PanelOutputViewer({ live, onOpenFile, value }: { live: boolean; onOpenF
 
 function PanelLoadingSpinner() {
   return (
-    <svg aria-hidden="true" className="ai-ins-output-state-spinner" fill="none" viewBox="0 0 24 24">
+    <svg aria-hidden="true" className="poke-output-state-spinner" fill="none" viewBox="0 0 24 24">
       <circle cx="12" cy="12" opacity="0.22" r="8.5" stroke="currentColor" strokeWidth="3" />
       <path d="M20.5 12a8.5 8.5 0 0 0-8.5-8.5" stroke="currentColor" strokeLinecap="round" strokeWidth="3.2" />
       <path d="M17.4 5.9a8.5 8.5 0 0 1 2.7 4.1" opacity="0.62" stroke="#bfdbfe" strokeLinecap="round" strokeWidth="3.2" />
@@ -980,7 +981,7 @@ export function PanelView(props: PanelViewProps & { getDisplayPath: (path: strin
     .map((turn) => `${turn.output.length}/${turn.changedFiles?.length ?? '-'}`)
     .join('|')}`
   const agentPromptTurn = selectedRunTurns.find((turn) => turn.index === agentPromptTurnIndex)
-  const selectedRunLogLabel = selectedRun?.logDisplayPath || selectedRun?.logPath || '.ai-ins/<run-id>.log'
+  const selectedRunLogLabel = selectedRun?.logDisplayPath || selectedRun?.logPath || '.poke/<run-id>.log'
   const selectedRunAgentPrompt = agentPromptTurn?.agentPrompt?.trim() || ''
   const macPlatform = useMemo(() => panelIsMacPlatform(), [])
   const modifierSubmitShortcutLabel = useMemo(() => panelGetModifierSubmitShortcutLabel(macPlatform), [macPlatform])
@@ -1083,7 +1084,7 @@ export function PanelView(props: PanelViewProps & { getDisplayPath: (path: strin
       : t(proxyMode === 'custom' ? 'composer.proxyCustom' : 'composer.proxySystem')
     return (
       <button
-        className={`ai-ins-proxy-chip${missing ? ' ai-ins-proxy-chip-warn' : ''}`}
+        className={`poke-proxy-chip${missing ? ' poke-proxy-chip-warn' : ''}`}
         onClick={() => {
           setHelpOpen(false)
           setSettingsOpen(true)
@@ -1136,10 +1137,10 @@ export function PanelView(props: PanelViewProps & { getDisplayPath: (path: strin
     compact = false,
   ) {
     return (
-      <div aria-label={label} className={`ai-ins-segmented${compact ? ' ai-ins-segmented-compact' : ''}`} role="radiogroup">
+      <div aria-label={label} className={`poke-segmented${compact ? ' poke-segmented-compact' : ''}`} role="radiogroup">
         {options.map((option) => (
-          <label className="ai-ins-segmented-option" key={option.value}>
-            <input checked={value === option.value} name={`ai-ins-${name}`} onChange={() => onChange(option.value)} type="radio" value={option.value} />
+          <label className="poke-segmented-option" key={option.value}>
+            <input checked={value === option.value} name={`poke-${name}`} onChange={() => onChange(option.value)} type="radio" value={option.value} />
             <span>
               {option.icon ? <Icon paths={option.icon} /> : null}
               {option.label}
@@ -1154,13 +1155,13 @@ export function PanelView(props: PanelViewProps & { getDisplayPath: (path: strin
   function renderPermissionProviderNote() {
     if (!provider) return null
     if (!provider.permissionModes?.length) {
-      return <p className="ai-ins-settings-note">{t('settings.permissionFixed', { provider: provider.label })}</p>
+      return <p className="poke-settings-note">{t('settings.permissionFixed', { provider: provider.label })}</p>
     }
 
     const actual = panelResolvePermissionMode(provider, permissionMode)
     if (!actual || actual === permissionMode) return null
     return (
-      <p className="ai-ins-settings-note">
+      <p className="poke-settings-note">
         {t('settings.permissionFallback', {
           actual: t(panelPermissionModeKeys[actual]),
           provider: provider.label,
@@ -1172,7 +1173,7 @@ export function PanelView(props: PanelViewProps & { getDisplayPath: (path: strin
 
   function openRunMenu(event: ReactMouseEvent<HTMLButtonElement>, run: AgentRun) {
     event.preventDefault()
-    const panel = event.currentTarget.closest('.ai-ins-panel')
+    const panel = event.currentTarget.closest('.poke-panel')
     if (!panel) return
     const bounds = panel.getBoundingClientRect()
     // The context-menu key fires with no pointer position: open at the row instead.
@@ -1191,8 +1192,8 @@ export function PanelView(props: PanelViewProps & { getDisplayPath: (path: strin
     return (
       <>
           {/* Search fills the row; "new conversation" is the compact + at its end. */}
-          <div className="ai-ins-sidebar-nav">
-            <label className="ai-ins-run-search">
+          <div className="poke-sidebar-nav">
+            <label className="poke-run-search">
               <Icon paths={searchIcon} />
               <input
                 aria-label={t('sidebar.search')}
@@ -1214,7 +1215,7 @@ export function PanelView(props: PanelViewProps & { getDisplayPath: (path: strin
             <button
               aria-label={t('sidebar.newConversation')}
               aria-pressed={!selectedRun && !selectedChange}
-              className="ai-ins-icon-button ai-ins-new-chat"
+              className="poke-icon-button poke-new-chat"
               onClick={() => {
                 setSelectedChangePath(undefined)
                 onNewConversation()
@@ -1226,7 +1227,7 @@ export function PanelView(props: PanelViewProps & { getDisplayPath: (path: strin
             </button>
           </div>
           <div
-            className="ai-ins-list"
+            className="poke-list"
             data-fade-bottom={runListEdges.edges.bottom}
             data-fade-top={runListEdges.edges.top}
             onScroll={() => {
@@ -1237,8 +1238,8 @@ export function PanelView(props: PanelViewProps & { getDisplayPath: (path: strin
           >
             {runGroups.length ? (
               runGroups.map((group) => (
-                <div className="ai-ins-run-group" key={group.label}>
-                  <p className="ai-ins-run-group-label">{group.label}</p>
+                <div className="poke-run-group" key={group.label}>
+                  <p className="poke-run-group-label">{group.label}</p>
                   {group.runs.map((run) => {
                     const stuck = panelIsRunStuck(run)
                     const tone = panelGetRunTone(run)
@@ -1246,7 +1247,7 @@ export function PanelView(props: PanelViewProps & { getDisplayPath: (path: strin
                     return (
                       <button
                         aria-current={selectedRun?.id === run.id && !selectedChange ? 'true' : undefined}
-                        className={`ai-ins-run${selectedRun?.id === run.id && !selectedChange ? ' ai-ins-run-active' : ''}`}
+                        className={`poke-run${selectedRun?.id === run.id && !selectedChange ? ' poke-run-active' : ''}`}
                         key={run.id}
                         onClick={() => {
                           setSelectedChangePath(undefined)
@@ -1256,25 +1257,25 @@ export function PanelView(props: PanelViewProps & { getDisplayPath: (path: strin
                         title={stuck ? panelGetResumeBlockedMessage(run) : undefined}
                         type="button"
                       >
-                        <div className="ai-ins-run-top">
-                          <span className={`ai-ins-dot ai-ins-dot-${tone === 'active' ? run.status : tone}`} />
-                          <span className="ai-ins-run-title">{panelGetRunTitle(run, getDisplayPath)}</span>
+                        <div className="poke-run-top">
+                          <span className={`poke-dot poke-dot-${tone === 'active' ? run.status : tone}`} />
+                          <span className="poke-run-title">{panelGetRunTitle(run, getDisplayPath)}</span>
                           {run.pinnedAt ? (
-                            <span className="ai-ins-run-pin" title={t('sidebar.pinned')}>
+                            <span className="poke-run-pin" title={t('sidebar.pinned')}>
                               <Icon paths={pinIcon} />
                             </span>
                           ) : null}
                         </div>
-                        <div className="ai-ins-run-focus">
-                          <span className="ai-ins-run-focus-name">{panelGetRunFocusLabel(run, getDisplayPath)}</span>
-                          <span className="ai-ins-run-provider">{run.providerLabel}</span>
+                        <div className="poke-run-focus">
+                          <span className="poke-run-focus-name">{panelGetRunFocusLabel(run, getDisplayPath)}</span>
+                          <span className="poke-run-provider">{run.providerLabel}</span>
                         </div>
-                        {lastPrompt ? <div className="ai-ins-run-prompt ai-ins-run-prompt-latest">↳ {lastPrompt}</div> : null}
-                        <div className="ai-ins-run-meta">
-                          <span className={`ai-ins-run-status ai-ins-run-status-${tone}`}>{panelGetRunStateLabel(run)}</span>
+                        {lastPrompt ? <div className="poke-run-prompt poke-run-prompt-latest">↳ {lastPrompt}</div> : null}
+                        <div className="poke-run-meta">
+                          <span className={`poke-run-status poke-run-status-${tone}`}>{panelGetRunStateLabel(run)}</span>
                           <span>{panelFormatRunListTime(panelGetRunActivityAt(run), Date.now())}</span>
-                          {run.turns.length > 1 ? <span className="ai-ins-run-turn-count">{t('sidebar.turnCount', { count: run.turns.length })}</span> : null}
-                          {stuck ? <span className="ai-ins-run-stuck-tag">{t('sidebar.cannotContinue')}</span> : null}
+                          {run.turns.length > 1 ? <span className="poke-run-turn-count">{t('sidebar.turnCount', { count: run.turns.length })}</span> : null}
+                          {stuck ? <span className="poke-run-stuck-tag">{t('sidebar.cannotContinue')}</span> : null}
                         </div>
                       </button>
                     )
@@ -1282,16 +1283,16 @@ export function PanelView(props: PanelViewProps & { getDisplayPath: (path: strin
                 </div>
               ))
             ) : (
-              <div className="ai-ins-detail-empty">
+              <div className="poke-detail-empty">
                 {runsLoading ? t('sidebar.loading') : runs.length ? t('sidebar.noMatch') : t('sidebar.empty')}
               </div>
             )}
           </div>
           {/* Rare and destructive: kept out of the way at the bottom. */}
           {finishedRunCount ? (
-            <div className="ai-ins-sidebar-foot">
+            <div className="poke-sidebar-foot">
               <button
-                className="ai-ins-sidebar-foot-button"
+                className="poke-sidebar-foot-button"
                 onClick={() => {
                   if (window.confirm(t('sidebar.clearFinishedConfirm', { count: finishedRunCount }))) {
                     onClearFinishedRuns()
@@ -1302,7 +1303,7 @@ export function PanelView(props: PanelViewProps & { getDisplayPath: (path: strin
               >
                 <Icon paths={trashIcon} />
                 <span>{t('sidebar.clearFinished')}</span>
-                <span className="ai-ins-sidebar-foot-count">{finishedRunCount}</span>
+                <span className="poke-sidebar-foot-count">{finishedRunCount}</span>
               </button>
             </div>
           ) : null}
@@ -1317,17 +1318,17 @@ export function PanelView(props: PanelViewProps & { getDisplayPath: (path: strin
 
     return (
       <>
-        <div className="ai-ins-changes-head">
-          <span className="ai-ins-changes-title">{t('changes.title')}</span>
+        <div className="poke-changes-head">
+          <span className="poke-changes-title">{t('changes.title')}</span>
           {changedFiles.length ? (
-            <span className="ai-ins-msg-file-stat">
-              {additions ? <span className="ai-ins-msg-file-add">+{additions}</span> : null}
-              {deletions ? <span className="ai-ins-msg-file-del">−{deletions}</span> : null}
+            <span className="poke-msg-file-stat">
+              {additions ? <span className="poke-msg-file-add">+{additions}</span> : null}
+              {deletions ? <span className="poke-msg-file-del">−{deletions}</span> : null}
             </span>
           ) : null}
           <button
             aria-label={t('changes.refresh')}
-            className={`ai-ins-icon-button ai-ins-changes-refresh${loading ? ' ai-ins-changes-refresh-busy' : ''}`}
+            className={`poke-icon-button poke-changes-refresh${loading ? ' poke-changes-refresh-busy' : ''}`}
             onClick={refreshWorkspaceChanges}
             title={t('changes.refresh')}
             type="button"
@@ -1336,20 +1337,20 @@ export function PanelView(props: PanelViewProps & { getDisplayPath: (path: strin
           </button>
         </div>
         <div
-          className="ai-ins-list"
+          className="poke-list"
           data-fade-bottom={changeListEdges.edges.bottom}
           data-fade-top={changeListEdges.edges.top}
           onScroll={changeListEdges.measure}
           ref={changeListEdges.ref}
         >
           {error && !data ? (
-            <div className="ai-ins-detail-empty">{error}</div>
+            <div className="poke-detail-empty">{error}</div>
           ) : !data ? (
-            <div className="ai-ins-detail-empty">{t('changes.loading')}</div>
+            <div className="poke-detail-empty">{t('changes.loading')}</div>
           ) : !data.available ? (
-            <div className="ai-ins-detail-empty">{t('changes.unavailable')}</div>
+            <div className="poke-detail-empty">{t('changes.unavailable')}</div>
           ) : !changedFiles.length ? (
-            <div className="ai-ins-detail-empty">{t('changes.empty')}</div>
+            <div className="poke-detail-empty">{t('changes.empty')}</div>
           ) : (
             ([true, false] as const).map((staged) => {
               const section = changedFiles.filter((file) => file.staged === staged)
@@ -1358,11 +1359,11 @@ export function PanelView(props: PanelViewProps & { getDisplayPath: (path: strin
               const collapsed = collapsedChangeSections.has(sectionKey)
               const busy = section.some((file) => stagingPaths.has(file.path))
               return (
-                <div className="ai-ins-run-group" key={sectionKey}>
-                  <div className="ai-ins-changes-section">
+                <div className="poke-run-group" key={sectionKey}>
+                  <div className="poke-changes-section">
                     <button
                       aria-expanded={!collapsed}
-                      className="ai-ins-changes-section-toggle"
+                      className="poke-changes-section-toggle"
                       onClick={() =>
                         setCollapsedChangeSections((current) => {
                           const next = new Set(current)
@@ -1373,15 +1374,15 @@ export function PanelView(props: PanelViewProps & { getDisplayPath: (path: strin
                       }
                       type="button"
                     >
-                      <span className="ai-ins-changes-section-chevron">
+                      <span className="poke-changes-section-chevron">
                         <Icon paths={chevronRightIcon} />
                       </span>
                       {staged ? t('changes.staged') : t('changes.unstaged')}
-                      <span className="ai-ins-changes-section-count">{section.length}</span>
+                      <span className="poke-changes-section-count">{section.length}</span>
                     </button>
                     <button
                       aria-label={staged ? t('changes.unstageAll') : t('changes.stageAll')}
-                      className="ai-ins-icon-button ai-ins-change-stage"
+                      className="poke-icon-button poke-change-stage"
                       disabled={busy}
                       onClick={() => stageChanges(section, !staged)}
                       title={staged ? t('changes.unstageAll') : t('changes.stageAll')}
@@ -1396,29 +1397,29 @@ export function PanelView(props: PanelViewProps & { getDisplayPath: (path: strin
                         const key = panelChangeKey(file)
                         const [name, directory] = panelSplitPath(getDisplayPath(file.path))
                         return (
-                          <div className={`ai-ins-change${selectedChangePath === key ? ' ai-ins-change-active' : ''}`} key={`${key}:${version}`}>
+                          <div className={`poke-change${selectedChangePath === key ? ' poke-change-active' : ''}`} key={`${key}:${version}`}>
                             <button
                               aria-current={selectedChangePath === key ? 'true' : undefined}
-                              className="ai-ins-change-main"
+                              className="poke-change-main"
                               onClick={() => setSelectedChangePath(key)}
                               title={getDisplayPath(file.path)}
                               type="button"
                             >
-                              <span className={`ai-ins-msg-file-status ai-ins-msg-file-status-${file.status}`}>{panelChangeStatusLabels[file.status]}</span>
-                              <span className="ai-ins-change-name">
+                              <span className={`poke-msg-file-status poke-msg-file-status-${file.status}`}>{panelChangeStatusLabels[file.status]}</span>
+                              <span className="poke-change-name">
                                 <span>{name}</span>
-                                {directory ? <span className="ai-ins-change-dir">{directory}</span> : null}
+                                {directory ? <span className="poke-change-dir">{directory}</span> : null}
                               </span>
                               {file.additions !== undefined && !file.binary ? (
-                                <span className="ai-ins-msg-file-stat">
-                                  {file.additions ? <span className="ai-ins-msg-file-add">+{file.additions}</span> : null}
-                                  {file.deletions ? <span className="ai-ins-msg-file-del">−{file.deletions}</span> : null}
+                                <span className="poke-msg-file-stat">
+                                  {file.additions ? <span className="poke-msg-file-add">+{file.additions}</span> : null}
+                                  {file.deletions ? <span className="poke-msg-file-del">−{file.deletions}</span> : null}
                                 </span>
                               ) : null}
                             </button>
                             <button
                               aria-label={`${staged ? t('changes.unstage') : t('changes.stage')} ${getDisplayPath(file.path)}`}
-                              className="ai-ins-icon-button ai-ins-change-stage"
+                              className="poke-icon-button poke-change-stage"
                               disabled={stagingPaths.has(file.path)}
                               onClick={() => stageChanges([file], !staged)}
                               title={staged ? t('changes.unstage') : t('changes.stage')}
@@ -1460,19 +1461,19 @@ export function PanelView(props: PanelViewProps & { getDisplayPath: (path: strin
     const owner = file.runId ? runs.find((run) => run.id === file.runId) : undefined
 
     return (
-      <main className="ai-ins-main ai-ins-chat">
-        <header className="ai-ins-chat-head">
-          <div className="ai-ins-chat-head-copy">
-            <p className="ai-ins-detail-title" title={displayPath}>
+      <main className="poke-main poke-chat">
+        <header className="poke-chat-head">
+          <div className="poke-chat-head-copy">
+            <p className="poke-detail-title" title={displayPath}>
               {name}
             </p>
-            <div className="ai-ins-detail-subtitle ai-ins-change-subtitle">
+            <div className="poke-detail-subtitle poke-change-subtitle">
               <span>{[directory, file.staged ? t('changes.stagedVs') : t('changes.unstagedVs')].filter(Boolean).join(' · ')}</span>
               {owner ? (
                 <>
                   <span>· {t('changes.fromRun')}</span>
                   <button
-                    className="ai-ins-msg-link ai-ins-change-owner"
+                    className="poke-msg-link poke-change-owner"
                     onClick={() => {
                       setSelectedChangePath(undefined)
                       onSelectRun(owner.id)
@@ -1486,11 +1487,11 @@ export function PanelView(props: PanelViewProps & { getDisplayPath: (path: strin
               ) : null}
             </div>
           </div>
-          <div className="ai-ins-detail-actions">
+          <div className="poke-detail-actions">
             {file.additions !== undefined && !file.binary ? (
-              <span className="ai-ins-msg-file-stat">
-                {file.additions ? <span className="ai-ins-msg-file-add">+{file.additions}</span> : null}
-                {file.deletions ? <span className="ai-ins-msg-file-del">−{file.deletions}</span> : null}
+              <span className="poke-msg-file-stat">
+                {file.additions ? <span className="poke-msg-file-add">+{file.additions}</span> : null}
+                {file.deletions ? <span className="poke-msg-file-del">−{file.deletions}</span> : null}
               </span>
             ) : null}
             {file.status !== 'deleted' ? (
@@ -1498,13 +1499,13 @@ export function PanelView(props: PanelViewProps & { getDisplayPath: (path: strin
                 <Icon paths={externalLinkIcon} />
               </IconButton>
             ) : null}
-            <button className="ai-ins-button ai-ins-button-small" onClick={() => setSelectedChangePath(undefined)} type="button">
+            <button className="poke-button poke-button-small" onClick={() => setSelectedChangePath(undefined)} type="button">
               {t('changes.back')}
             </button>
           </div>
           {renderPanelActions()}
         </header>
-        <div className="ai-ins-change-body">
+        <div className="poke-change-body">
           <FileDiff cacheKey={`workspace:${panelChangeKey(file)}:${workspaceChanges.version}`} fill load={() => onLoadWorkspaceFileDiff(file.path, file.staged)} />
         </div>
       </main>
@@ -1513,7 +1514,7 @@ export function PanelView(props: PanelViewProps & { getDisplayPath: (path: strin
 
   function renderPanelActions() {
     return (
-      <div className="ai-ins-header-actions">
+      <div className="poke-header-actions">
         {renderHelp()}
         {renderSettings()}
         <IconButton label={t('panel.collapse')} onClick={onClose}>
@@ -1535,7 +1536,7 @@ export function PanelView(props: PanelViewProps & { getDisplayPath: (path: strin
     return (
       <div
         aria-label={t('sidebar.runMenu')}
-        className="ai-ins-context-menu"
+        className="poke-context-menu"
         onKeyDown={(event) => {
           const items = Array.from(runMenuRef.current?.querySelectorAll<HTMLButtonElement>('[role="menuitem"]') ?? [])
           const index = items.indexOf(document.activeElement as HTMLButtonElement)
@@ -1561,7 +1562,7 @@ export function PanelView(props: PanelViewProps & { getDisplayPath: (path: strin
         style={{ left: runMenu.x, top: runMenu.y }}
       >
         <button
-          className="ai-ins-context-menu-item"
+          className="poke-context-menu-item"
           onClick={() => {
             close(true)
             onPinRun(run, !run.pinnedAt)
@@ -1572,9 +1573,9 @@ export function PanelView(props: PanelViewProps & { getDisplayPath: (path: strin
           <Icon paths={run.pinnedAt ? pinOffIcon : pinIcon} />
           {run.pinnedAt ? t('sidebar.unpin') : t('sidebar.pin')}
         </button>
-        <div className="ai-ins-context-menu-separator" role="separator" />
+        <div className="poke-context-menu-separator" role="separator" />
         <button
-          className="ai-ins-context-menu-item ai-ins-context-menu-item-danger"
+          className="poke-context-menu-item poke-context-menu-item-danger"
           onClick={() => {
             close(false)
             onDeleteRun(run)
@@ -1600,7 +1601,7 @@ export function PanelView(props: PanelViewProps & { getDisplayPath: (path: strin
 
     return (
       <div
-        className="ai-ins-settings"
+        className="poke-settings"
         onKeyDown={(event) => {
           if (event.key === 'Escape' && settingsOpen) {
             // Keep the overlay from closing the whole panel; see the search box.
@@ -1615,7 +1616,7 @@ export function PanelView(props: PanelViewProps & { getDisplayPath: (path: strin
           aria-expanded={settingsOpen}
           aria-haspopup="dialog"
           aria-label={settingsTitle}
-          className={`ai-ins-icon-button ai-ins-settings-trigger${settingsOpen ? ' ai-ins-settings-trigger-open' : ''}`}
+          className={`poke-icon-button poke-settings-trigger${settingsOpen ? ' poke-settings-trigger-open' : ''}`}
           onClick={() => {
             setHelpOpen(false)
             setSettingsOpen((open) => !open)
@@ -1625,23 +1626,23 @@ export function PanelView(props: PanelViewProps & { getDisplayPath: (path: strin
           type="button"
         >
           <Icon paths={slidersIcon} />
-          {settingsBadge ? <span className={`ai-ins-settings-dot ai-ins-settings-dot-${settingsBadge}`} /> : null}
+          {settingsBadge ? <span className={`poke-settings-dot poke-settings-dot-${settingsBadge}`} /> : null}
         </button>
         {settingsOpen ? (
-          <div aria-label={t('settings.title')} className="ai-ins-settings-popover" role="dialog">
-            <div className="ai-ins-settings-head">
+          <div aria-label={t('settings.title')} className="poke-settings-popover" role="dialog">
+            <div className="poke-settings-head">
               <span>{t('settings.title')}</span>
               <IconButton label={t('settings.close')} onClick={closeSettings}>
                 <Icon paths={closeIcon} />
               </IconButton>
             </div>
-            <div className="ai-ins-settings-body">
+            <div className="poke-settings-body">
               {/* Grouped like system settings: short choices sit on the row, longer ones below it. */}
-              <section className="ai-ins-settings-group">
-                <h3 className="ai-ins-settings-group-title">{t('settings.general')}</h3>
-                <div className="ai-ins-settings-card">
-                  <div className="ai-ins-settings-row">
-                    <span className="ai-ins-settings-label">{t('settings.theme')}</span>
+              <section className="poke-settings-group">
+                <h3 className="poke-settings-group-title">{t('settings.general')}</h3>
+                <div className="poke-settings-card">
+                  <div className="poke-settings-row">
+                    <span className="poke-settings-label">{t('settings.theme')}</span>
                     {renderSegmented<PanelTheme>(
                       'theme',
                       t('settings.theme'),
@@ -1654,12 +1655,12 @@ export function PanelView(props: PanelViewProps & { getDisplayPath: (path: strin
                       true,
                     )}
                   </div>
-                  <div className="ai-ins-settings-row">
-                    <span className="ai-ins-settings-label">
+                  <div className="poke-settings-row">
+                    <span className="poke-settings-label">
                       {t('settings.language')}
-                      {locale === 'en' ? null : <span className="ai-ins-label-hint">Language</span>}
+                      {locale === 'en' ? null : <span className="poke-label-hint">Language</span>}
                     </span>
-                    <div className="ai-ins-settings-select">
+                    <div className="poke-settings-select">
                       <PanelSelect
                         ariaLabel={t('settings.language')}
                         block
@@ -1674,13 +1675,13 @@ export function PanelView(props: PanelViewProps & { getDisplayPath: (path: strin
                       />
                     </div>
                   </div>
-                  <div className="ai-ins-settings-row ai-ins-settings-row-stack ai-ins-settings-row-switch">
-                    <div className="ai-ins-settings-row-line">
-                      <span className="ai-ins-settings-label">{t('settings.notify')}</span>
+                  <div className="poke-settings-row poke-settings-row-stack poke-settings-row-switch">
+                    <div className="poke-settings-row-line">
+                      <span className="poke-settings-label">{t('settings.notify')}</span>
                       <button
                         aria-checked={notifyEnabled}
                         aria-label={t('settings.notify')}
-                        className="ai-ins-switch"
+                        className="poke-switch"
                         disabled={notifySupport === 'unsupported' || (notifySupport === 'denied' && !notifyEnabled)}
                         onClick={() => {
                           void setNotifyEnabled(!notifyEnabled).then((enabled) => {
@@ -1691,10 +1692,10 @@ export function PanelView(props: PanelViewProps & { getDisplayPath: (path: strin
                         role="switch"
                         type="button"
                       >
-                        <span className="ai-ins-switch-thumb" />
+                        <span className="poke-switch-thumb" />
                       </button>
                     </div>
-                    <p className={`ai-ins-settings-note${notifySupport === 'denied' ? ' ai-ins-settings-note-warn' : ''}`}>
+                    <p className={`poke-settings-note${notifySupport === 'denied' ? ' poke-settings-note-warn' : ''}`}>
                       {notifySupport === 'unsupported'
                         ? t('settings.notifyUnsupported')
                         : notifySupport === 'denied'
@@ -1702,17 +1703,17 @@ export function PanelView(props: PanelViewProps & { getDisplayPath: (path: strin
                           : t('settings.notifyNote')}
                     </p>
                   </div>
-                  <div className="ai-ins-settings-row">
-                    <span className="ai-ins-settings-label">{t('settings.shortcut')}</span>
+                  <div className="poke-settings-row">
+                    <span className="poke-settings-label">{t('settings.shortcut')}</span>
                     {renderSegmented('shortcut', t('settings.shortcut'), submitShortcutOptions, submitShortcut, handleSubmitShortcutChange, true)}
                   </div>
                 </div>
               </section>
-              <section className="ai-ins-settings-group">
-                <h3 className="ai-ins-settings-group-title">{t('settings.agent')}</h3>
-                <div className="ai-ins-settings-card">
-                  <div className="ai-ins-settings-row ai-ins-settings-row-stack">
-                    <span className="ai-ins-settings-label">{t('settings.permission')}</span>
+              <section className="poke-settings-group">
+                <h3 className="poke-settings-group-title">{t('settings.agent')}</h3>
+                <div className="poke-settings-card">
+                  <div className="poke-settings-row poke-settings-row-stack">
+                    <span className="poke-settings-label">{t('settings.permission')}</span>
                     {renderSegmented<PermissionMode>(
                       'permission',
                       t('settings.permission'),
@@ -1720,21 +1721,21 @@ export function PanelView(props: PanelViewProps & { getDisplayPath: (path: strin
                       permissionMode,
                       onPermissionModeChange,
                     )}
-                    <p className={`ai-ins-settings-note${permissionMode === 'full' ? ' ai-ins-settings-note-warn' : ''}`}>
+                    <p className={`poke-settings-note${permissionMode === 'full' ? ' poke-settings-note-warn' : ''}`}>
                       {t(panelPermissionNoteKeys[permissionMode])}
                     </p>
                     {renderPermissionProviderNote()}
                   </div>
-                  <div className="ai-ins-settings-row ai-ins-settings-row-stack">
-                    <span className="ai-ins-settings-label">
+                  <div className="poke-settings-row poke-settings-row-stack">
+                    <span className="poke-settings-label">
                       {t('settings.proxy')}
-                      <span className="ai-ins-label-hint">{getProxyModeHint()}</span>
+                      <span className="poke-label-hint">{getProxyModeHint()}</span>
                     </span>
                     {renderSegmented('proxy', t('settings.proxy'), panelGetProxyModeOptions(), proxyMode, onProxyModeChange)}
                     {proxyMode !== 'off' ? (
                       <input
                         aria-label={t('settings.proxyAddress')}
-                        className="ai-ins-input ai-ins-proxy-input"
+                        className="poke-input poke-proxy-input"
                         disabled={proxyMode !== 'custom'}
                         onChange={(event) => onProxyChange(event.target.value)}
                         placeholder={getProxyInputPlaceholder()}
@@ -1743,7 +1744,7 @@ export function PanelView(props: PanelViewProps & { getDisplayPath: (path: strin
                         value={getProxyInputValue()}
                       />
                     ) : null}
-                    <p className="ai-ins-settings-note">{t('settings.proxyNote')}</p>
+                    <p className="poke-settings-note">{t('settings.proxyNote')}</p>
                   </div>
                 </div>
               </section>
@@ -1778,7 +1779,7 @@ export function PanelView(props: PanelViewProps & { getDisplayPath: (path: strin
 
     return (
       <div
-        className="ai-ins-settings"
+        className="poke-settings"
         onKeyDown={(event) => {
           if (event.key === 'Escape' && helpOpen) {
             // Keep the overlay from closing the whole panel; see the search box.
@@ -1793,7 +1794,7 @@ export function PanelView(props: PanelViewProps & { getDisplayPath: (path: strin
           aria-expanded={helpOpen}
           aria-haspopup="dialog"
           aria-label={t('help.triggerTitle')}
-          className={`ai-ins-icon-button ai-ins-settings-trigger${helpOpen ? ' ai-ins-settings-trigger-open' : ''}`}
+          className={`poke-icon-button poke-settings-trigger${helpOpen ? ' poke-settings-trigger-open' : ''}`}
           onClick={() => {
             setSettingsOpen(false)
             setHelpOpen((open) => !open)
@@ -1807,40 +1808,40 @@ export function PanelView(props: PanelViewProps & { getDisplayPath: (path: strin
           type="button"
         >
           <Icon paths={helpIcon} />
-          {helpSeen ? null : <span className="ai-ins-settings-dot ai-ins-settings-dot-on" />}
+          {helpSeen ? null : <span className="poke-settings-dot poke-settings-dot-on" />}
         </button>
         {helpOpen ? (
-          <div aria-label={t('help.title')} className="ai-ins-settings-popover ai-ins-help-popover" role="dialog">
-            <div className="ai-ins-settings-head">
+          <div aria-label={t('help.title')} className="poke-settings-popover poke-help-popover" role="dialog">
+            <div className="poke-settings-head">
               <span>{t('help.title')}</span>
               <IconButton label={t('help.close')} onClick={closeHelp}>
                 <Icon paths={closeIcon} />
               </IconButton>
             </div>
-            <div className="ai-ins-settings-body">
-              <ol className="ai-ins-help-steps">
+            <div className="poke-settings-body">
+              <ol className="poke-help-steps">
                 {steps.map((step, index) => (
                   <li key={step.title}>
-                    <span className="ai-ins-help-step-index">{index + 1}</span>
+                    <span className="poke-help-step-index">{index + 1}</span>
                     <div>
-                      <p className="ai-ins-help-step-title">{step.title}</p>
-                      <p className="ai-ins-help-step-body">{step.body}</p>
+                      <p className="poke-help-step-title">{step.title}</p>
+                      <p className="poke-help-step-body">{step.body}</p>
                     </div>
                   </li>
                 ))}
               </ol>
-              <section className="ai-ins-settings-group">
-                <h3 className="ai-ins-settings-group-title">{t('help.shortcuts')}</h3>
-                <div className="ai-ins-settings-card">
+              <section className="poke-settings-group">
+                <h3 className="poke-settings-group-title">{t('help.shortcuts')}</h3>
+                <div className="poke-settings-card">
                   {shortcuts.map((shortcut) => (
-                    <div className="ai-ins-settings-row ai-ins-help-shortcut" key={shortcut.label}>
-                      <span className="ai-ins-settings-label">{shortcut.label}</span>
-                      <kbd className="ai-ins-help-kbd">{shortcut.keys}</kbd>
+                    <div className="poke-settings-row poke-help-shortcut" key={shortcut.label}>
+                      <span className="poke-settings-label">{shortcut.label}</span>
+                      <kbd className="poke-help-kbd">{shortcut.keys}</kbd>
                     </div>
                   ))}
                 </div>
               </section>
-              <p className="ai-ins-settings-note">{t('help.dock')}</p>
+              <p className="poke-settings-note">{t('help.dock')}</p>
             </div>
           </div>
         ) : null}
@@ -1890,52 +1891,52 @@ export function PanelView(props: PanelViewProps & { getDisplayPath: (path: strin
     const canRetry = isLatest && !expandAll && turn.completed && turn.status === 'failed' && run.canResume && !queuedPrompt && !submitting
 
     return (
-      <section className="ai-ins-msg-group" key={key}>
-        <div className="ai-ins-msg-user">
-          <div className="ai-ins-msg-bubble">{turn.prompt}</div>
-          <div className="ai-ins-msg-meta">
+      <section className="poke-msg-group" key={key}>
+        <div className="poke-msg-user">
+          <div className="poke-msg-bubble">{turn.prompt}</div>
+          <div className="poke-msg-meta">
             {focusLabel ? (
-              <span className="ai-ins-msg-focus" title={turn.sourcePath}>
+              <span className="poke-msg-focus" title={turn.sourcePath}>
                 {previousTurn ? t('turn.focusChanged', { focus: focusLabel }) : focusLabel}
               </span>
             ) : null}
             <span>{panelFormatRunListTime(turn.createdAt, Date.now())}</span>
-            <button className="ai-ins-msg-link" onClick={() => setAgentPromptTurnIndex(turn.index)} type="button">
+            <button className="poke-msg-link" onClick={() => setAgentPromptTurnIndex(turn.index)} type="button">
               {t('turn.fullPrompt')}
             </button>
           </div>
         </div>
-        <article className={`ai-ins-msg-card ai-ins-msg-card-${tone}${collapsed ? ' ai-ins-msg-card-collapsed' : ''}`}>
-          <header className="ai-ins-msg-card-head">
-            <span className="ai-ins-msg-avatar" aria-hidden="true" />
-            <span className="ai-ins-msg-author">{run.providerLabel}</span>
-            {turn.resumed ? <span className="ai-ins-turn-tag">{t('turn.resumed')}</span> : null}
-            {turn.permissionMode === 'full' ? <span className="ai-ins-turn-tag ai-ins-turn-tag-warn">{t('turn.fullAccess')}</span> : null}
-            <span className={`ai-ins-turn-status ai-ins-turn-status-${tone}`}>{waiting ? t('permission.waiting') : panelGetTurnStatusLabel(turn)}</span>
-            {duration ? <span className="ai-ins-msg-duration" title={t('turn.duration')}>{duration}</span> : null}
+        <article className={`poke-msg-card poke-msg-card-${tone}${collapsed ? ' poke-msg-card-collapsed' : ''}`}>
+          <header className="poke-msg-card-head">
+            <span className="poke-msg-avatar" aria-hidden="true" />
+            <span className="poke-msg-author">{run.providerLabel}</span>
+            {turn.resumed ? <span className="poke-turn-tag">{t('turn.resumed')}</span> : null}
+            {turn.permissionMode === 'full' ? <span className="poke-turn-tag poke-turn-tag-warn">{t('turn.fullAccess')}</span> : null}
+            <span className={`poke-turn-status poke-turn-status-${tone}`}>{waiting ? t('permission.waiting') : panelGetTurnStatusLabel(turn)}</span>
+            {duration ? <span className="poke-msg-duration" title={t('turn.duration')}>{duration}</span> : null}
             {working ? <PanelLoadingSpinner /> : null}
-            <span className="ai-ins-msg-turn">{t('turn.index', { index: turn.index + 1 })}</span>
+            <span className="poke-msg-turn">{t('turn.index', { index: turn.index + 1 })}</span>
           </header>
           {working ? null : renderThinking(run, turn, key, false)}
-          <div className="ai-ins-msg-card-body">
+          <div className="poke-msg-card-body">
             {output ? (
               <PanelOutputViewer live={working} onOpenFile={onOpenFile} value={output} />
             ) : working ? null : (
-              <p className="ai-ins-msg-waiting">{t('turn.noOutput')}</p>
+              <p className="poke-msg-waiting">{t('turn.noOutput')}</p>
             )}
             {working ? renderThinking(run, turn, key, true) : null}
           </div>
           {collapsible ? (
-            <button className="ai-ins-msg-toggle" onClick={() => toggleTurnExpanded(toggleKey)} type="button">
+            <button className="poke-msg-toggle" onClick={() => toggleTurnExpanded(toggleKey)} type="button">
               {collapsed ? t('turn.expandAll', { count: lineCount }) : t('turn.collapse')}
             </button>
           ) : null}
           {pendingPermissions.map((request) => renderPermissionRequest(run, request))}
           {renderChangedFiles(key, run, turn)}
           {canRetry ? (
-            <div className="ai-ins-msg-actions">
+            <div className="poke-msg-actions">
               <span>{t(turn.stopped ? 'turn.stoppedNote' : turn.interrupted ? 'turn.interruptedNote' : 'turn.failedNote')}</span>
-              <button className="ai-ins-button ai-ins-button-small" onClick={() => onRetryTurn(run, turn)} type="button">
+              <button className="poke-button poke-button-small" onClick={() => onRetryTurn(run, turn)} type="button">
                 {t('turn.retry')}
               </button>
             </div>
@@ -1973,14 +1974,14 @@ export function PanelView(props: PanelViewProps & { getDisplayPath: (path: strin
         : t('thinking.title')
 
     return (
-      <div className={`ai-ins-thinking${live ? ' ai-ins-thinking-live' : ''}${open ? ' ai-ins-thinking-open' : ''}`}>
-        <button aria-expanded={thinking ? open : undefined} className="ai-ins-thinking-head" disabled={!thinking} onClick={() => toggleTurnExpanded(thinkingKey)} type="button">
-          {live ? <span className="ai-ins-thinking-pulse" aria-hidden="true" /> : null}
-          <span className="ai-ins-thinking-label">{label}</span>
-          {latestLine && !open ? <span className="ai-ins-thinking-snippet">{latestLine}</span> : null}
+      <div className={`poke-thinking${live ? ' poke-thinking-live' : ''}${open ? ' poke-thinking-open' : ''}`}>
+        <button aria-expanded={thinking ? open : undefined} className="poke-thinking-head" disabled={!thinking} onClick={() => toggleTurnExpanded(thinkingKey)} type="button">
+          {live ? <span className="poke-thinking-pulse" aria-hidden="true" /> : null}
+          <span className="poke-thinking-label">{label}</span>
+          {latestLine && !open ? <span className="poke-thinking-snippet">{latestLine}</span> : null}
           {thinking ? <Icon paths={chevronDownIcon} /> : null}
         </button>
-        {open ? <div className="ai-ins-thinking-body">{thinking}</div> : null}
+        {open ? <div className="poke-thinking-body">{thinking}</div> : null}
       </div>
     )
   }
@@ -1988,21 +1989,21 @@ export function PanelView(props: PanelViewProps & { getDisplayPath: (path: strin
   function renderPermissionRequest(run: AgentRun, request: PermissionRequest) {
     const detail = panelDescribePermissionInput(request.input)
     return (
-      <div className="ai-ins-permission" key={request.id} role="group" aria-label={t('permission.title', { provider: run.providerLabel })}>
-        <div className="ai-ins-permission-head">
-          <span className="ai-ins-permission-mark" aria-hidden="true" />
+      <div className="poke-permission" key={request.id} role="group" aria-label={t('permission.title', { provider: run.providerLabel })}>
+        <div className="poke-permission-head">
+          <span className="poke-permission-mark" aria-hidden="true" />
           <strong>{t('permission.title', { provider: run.providerLabel })}</strong>
         </div>
-        <div className="ai-ins-permission-tool">{t('permission.tool', { tool: panelFormatToolName(request.toolName) })}</div>
-        {detail ? <pre className="ai-ins-permission-input">{detail}</pre> : null}
-        <div className="ai-ins-permission-actions">
-          <button className="ai-ins-button ai-ins-button-primary ai-ins-button-small" onClick={() => onAnswerPermission(run, request, 'allow')} type="button">
+        <div className="poke-permission-tool">{t('permission.tool', { tool: panelFormatToolName(request.toolName) })}</div>
+        {detail ? <pre className="poke-permission-input">{detail}</pre> : null}
+        <div className="poke-permission-actions">
+          <button className="poke-button poke-button-primary poke-button-small" onClick={() => onAnswerPermission(run, request, 'allow')} type="button">
             {t('permission.allow')}
           </button>
-          <button className="ai-ins-button ai-ins-button-small" onClick={() => onAnswerPermission(run, request, 'always')} type="button">
+          <button className="poke-button poke-button-small" onClick={() => onAnswerPermission(run, request, 'always')} type="button">
             {t('permission.always')}
           </button>
-          <button className="ai-ins-button ai-ins-button-small ai-ins-button-danger" onClick={() => onAnswerPermission(run, request, 'deny')} type="button">
+          <button className="poke-button poke-button-small poke-button-danger" onClick={() => onAnswerPermission(run, request, 'deny')} type="button">
             {t('permission.deny')}
           </button>
         </div>
@@ -2018,7 +2019,7 @@ export function PanelView(props: PanelViewProps & { getDisplayPath: (path: strin
     }
 
     if (!files.length) {
-      return <div className="ai-ins-msg-files ai-ins-msg-files-empty">{t('files.none')}</div>
+      return <div className="poke-msg-files poke-msg-files-empty">{t('files.none')}</div>
     }
 
     const filesKey = `${key}:files`
@@ -2026,8 +2027,8 @@ export function PanelView(props: PanelViewProps & { getDisplayPath: (path: strin
     const visibleFiles = showAll ? files : files.slice(0, panelVisibleChangedFiles)
 
     return (
-      <div className="ai-ins-msg-files">
-        <div className="ai-ins-msg-files-head">{t('files.changed', { count: files.length })}</div>
+      <div className="poke-msg-files">
+        <div className="poke-msg-files-head">{t('files.changed', { count: files.length })}</div>
         <ul>
           {visibleFiles.map((file) => {
             const diffKey = `${key}:diff:${file.path}`
@@ -2036,11 +2037,11 @@ export function PanelView(props: PanelViewProps & { getDisplayPath: (path: strin
             const open = hasDiff && expandedTurns.has(diffKey)
             const displayPath = getDisplayPath(file.path)
             return (
-              <li className={open ? 'ai-ins-msg-file-open' : undefined} key={file.path}>
-                <div className="ai-ins-msg-file-row">
+              <li className={open ? 'poke-msg-file-open' : undefined} key={file.path}>
+                <div className="poke-msg-file-row">
                   <button
                     aria-expanded={hasDiff ? open : undefined}
-                    className="ai-ins-msg-file"
+                    className="poke-msg-file"
                     disabled={!hasDiff && file.status === 'deleted'}
                     onClick={() => (hasDiff ? toggleTurnExpanded(diffKey) : onOpenFile(file.path))}
                     title={
@@ -2053,25 +2054,25 @@ export function PanelView(props: PanelViewProps & { getDisplayPath: (path: strin
                     type="button"
                   >
                     {hasDiff ? (
-                      <span className="ai-ins-msg-file-chevron">
+                      <span className="poke-msg-file-chevron">
                         <Icon paths={chevronRightIcon} />
                       </span>
                     ) : null}
-                    <span className={`ai-ins-msg-file-status ai-ins-msg-file-status-${file.status}`} title={t(panelChangeStatusTitleKeys[file.status])}>
+                    <span className={`poke-msg-file-status poke-msg-file-status-${file.status}`} title={t(panelChangeStatusTitleKeys[file.status])}>
                       {panelChangeStatusLabels[file.status]}
                     </span>
-                    <span className="ai-ins-msg-file-path">{displayPath}</span>
+                    <span className="poke-msg-file-path">{displayPath}</span>
                     {file.additions !== undefined && !file.binary ? (
-                      <span className="ai-ins-msg-file-stat">
-                        {file.additions ? <span className="ai-ins-msg-file-add">+{file.additions}</span> : null}
-                        {file.deletions ? <span className="ai-ins-msg-file-del">−{file.deletions}</span> : null}
+                      <span className="poke-msg-file-stat">
+                        {file.additions ? <span className="poke-msg-file-add">+{file.additions}</span> : null}
+                        {file.deletions ? <span className="poke-msg-file-del">−{file.deletions}</span> : null}
                       </span>
                     ) : null}
                   </button>
                   {file.status !== 'deleted' ? (
                     <button
                       aria-label={t('files.open', { path: file.path })}
-                      className="ai-ins-icon-button ai-ins-msg-file-ide"
+                      className="poke-icon-button poke-msg-file-ide"
                       onClick={() => onOpenFile(file.path)}
                       title={t('files.open', { path: file.path })}
                       type="button"
@@ -2086,7 +2087,7 @@ export function PanelView(props: PanelViewProps & { getDisplayPath: (path: strin
           })}
         </ul>
         {files.length > panelVisibleChangedFiles ? (
-          <button className="ai-ins-msg-link" onClick={() => toggleTurnExpanded(filesKey)} type="button">
+          <button className="poke-msg-link" onClick={() => toggleTurnExpanded(filesKey)} type="button">
             {showAll ? t('files.collapse') : t('files.more', { count: files.length - panelVisibleChangedFiles })}
           </button>
         ) : null}
@@ -2102,7 +2103,7 @@ export function PanelView(props: PanelViewProps & { getDisplayPath: (path: strin
 
     if (!selectedRun.outputLoaded) {
       return (
-        <div className="ai-ins-chat-empty">
+        <div className="poke-chat-empty">
           <p>{selectedRun.detailLoading ? t('empty.loadingTranscript') : t('empty.transcriptNotLoaded')}</p>
         </div>
       )
@@ -2114,11 +2115,11 @@ export function PanelView(props: PanelViewProps & { getDisplayPath: (path: strin
           renderTurn(selectedRun, turn, selectedRunTurns[index - 1], index === selectedRunTurns.length - 1, expandAll),
         )}
         {queuedPrompt && !expandAll ? (
-          <div className="ai-ins-msg-user ai-ins-msg-user-queued">
-            <div className="ai-ins-msg-bubble">{queuedPrompt}</div>
-            <div className="ai-ins-msg-meta">
+          <div className="poke-msg-user poke-msg-user-queued">
+            <div className="poke-msg-bubble">{queuedPrompt}</div>
+            <div className="poke-msg-meta">
               <span>{t('turn.queued')}</span>
-              <button className="ai-ins-msg-link" onClick={onCancelQueued} type="button">
+              <button className="poke-msg-link" onClick={onCancelQueued} type="button">
                 {t('turn.withdraw')}
               </button>
             </div>
@@ -2130,14 +2131,13 @@ export function PanelView(props: PanelViewProps & { getDisplayPath: (path: strin
 
   function renderNewConversationIntro() {
     return (
-      <div className="ai-ins-chat-empty">
-        <span className="ai-ins-brand-mark ai-ins-chat-empty-mark" aria-hidden="true">
-          <span className="ai-ins-brand-diamond" />
-          <span className="ai-ins-brand-spark" />
+      <div className="poke-chat-empty">
+        <span className="poke-brand-mark poke-chat-empty-mark" aria-hidden="true">
+          <BrandGlyph />
         </span>
         {hasTarget ? (
           <>
-            <p className="ai-ins-chat-empty-title">{t('empty.newTitle')}</p>
+            <p className="poke-chat-empty-title">{t('empty.newTitle')}</p>
             <p>
               {t('empty.focus')}
               <code title={targetTitle}>{targetLabel}</code>
@@ -2146,27 +2146,27 @@ export function PanelView(props: PanelViewProps & { getDisplayPath: (path: strin
           </>
         ) : (
           <>
-            <p className="ai-ins-chat-empty-title">{runsLoading ? t('sidebar.loading') : t('empty.startTitle')}</p>
+            <p className="poke-chat-empty-title">{runsLoading ? t('sidebar.loading') : t('empty.startTitle')}</p>
             {/* The two ways in, side by side; each card is also the shortcut to start it. */}
-            <div className="ai-ins-empty-options">
-              <button className="ai-ins-empty-option" onClick={onClose} type="button">
-                <span className="ai-ins-empty-option-index">1</span>
-                <span className="ai-ins-empty-option-title">{t('empty.pickTitle')}</span>
-                <span className="ai-ins-empty-option-body">{t('empty.pickBody', { key: panelIsMacPlatform() ? 'Option' : 'Alt' })}</span>
-                <span className="ai-ins-empty-option-action">{t('empty.pickAction')} →</span>
+            <div className="poke-empty-options">
+              <button className="poke-empty-option" onClick={onClose} type="button">
+                <span className="poke-empty-option-index">1</span>
+                <span className="poke-empty-option-title">{t('empty.pickTitle')}</span>
+                <span className="poke-empty-option-body">{t('empty.pickBody', { key: panelIsMacPlatform() ? 'Option' : 'Alt' })}</span>
+                <span className="poke-empty-option-action">{t('empty.pickAction')} →</span>
               </button>
               <button
-                className="ai-ins-empty-option"
-                onClick={(event) => event.currentTarget.closest('.ai-ins-panel')?.querySelector<HTMLTextAreaElement>('.ai-ins-textarea')?.focus()}
+                className="poke-empty-option"
+                onClick={(event) => event.currentTarget.closest('.poke-panel')?.querySelector<HTMLTextAreaElement>('.poke-textarea')?.focus()}
                 type="button"
               >
-                <span className="ai-ins-empty-option-index">2</span>
-                <span className="ai-ins-empty-option-title">{t('empty.projectTitle')}</span>
-                <span className="ai-ins-empty-option-body">{t('empty.projectBody')}</span>
-                <span className="ai-ins-empty-option-action">{t('empty.projectAction')} ↓</span>
+                <span className="poke-empty-option-index">2</span>
+                <span className="poke-empty-option-title">{t('empty.projectTitle')}</span>
+                <span className="poke-empty-option-body">{t('empty.projectBody')}</span>
+                <span className="poke-empty-option-action">{t('empty.projectAction')} ↓</span>
               </button>
             </div>
-            {runs.length ? <p className="ai-ins-empty-history">{t('empty.historyHint')}</p> : null}
+            {runs.length ? <p className="poke-empty-history">{t('empty.historyHint')}</p> : null}
           </>
         )}
       </div>
@@ -2174,21 +2174,20 @@ export function PanelView(props: PanelViewProps & { getDisplayPath: (path: strin
   }
 
   return (
-    <div className="ai-ins-panel" data-busy={runs.some(panelIsRunWorking)} data-theme={theme} lang={locale} ref={panelSizeRef}>
-      <div className="ai-ins-body">
-        <aside aria-label={t('sidebar.history')} className="ai-ins-sidebar">
+    <div className="poke-panel" data-busy={runs.some(panelIsRunWorking)} data-theme={theme} lang={locale} ref={panelSizeRef}>
+      <div className="poke-body">
+        <aside aria-label={t('sidebar.history')} className="poke-sidebar">
           {/* The brand heads the sidebar; its bottom edge lines up with the chat header's. */}
-          <div className="ai-ins-heading">
-            <span className="ai-ins-brand-mark" aria-hidden="true">
-              <span className="ai-ins-brand-diamond" />
-              <span className="ai-ins-brand-spark" />
+          <div className="poke-heading">
+            <span className="poke-brand-mark" aria-hidden="true">
+              <BrandGlyph />
             </span>
-            <p className="ai-ins-title">AI Ins</p>
-            <div aria-label={t('sidebar.view')} className="ai-ins-view-tabs" role="tablist">
+            <p className="poke-title">Poke</p>
+            <div aria-label={t('sidebar.view')} className="poke-view-tabs" role="tablist">
               {(['runs', 'changes'] as const).map((view) => (
                 <button
                   aria-selected={sidebarView === view}
-                  className="ai-ins-view-tab"
+                  className="poke-view-tab"
                   key={view}
                   onClick={() => {
                     setSidebarView(view)
@@ -2199,7 +2198,7 @@ export function PanelView(props: PanelViewProps & { getDisplayPath: (path: strin
                   type="button"
                 >
                   {view === 'runs' ? t('sidebar.viewRuns') : t('sidebar.viewChanges')}
-                  {view === 'changes' && changedFileCount ? <span className="ai-ins-view-tab-count">{changedFileCount}</span> : null}
+                  {view === 'changes' && changedFileCount ? <span className="poke-view-tab-count">{changedFileCount}</span> : null}
                 </button>
               ))}
             </div>
@@ -2209,36 +2208,36 @@ export function PanelView(props: PanelViewProps & { getDisplayPath: (path: strin
         {renderRunMenu()}
 
         {selectedChange ? renderChangeDetail(selectedChange) : (
-        <main className="ai-ins-main ai-ins-chat">
-          <header className="ai-ins-chat-head">
+        <main className="poke-main poke-chat">
+          <header className="poke-chat-head">
             {selectedRun ? (
               <>
-                <div className="ai-ins-chat-head-copy">
-                  <p className="ai-ins-detail-title" title={panelGetRunTitle(selectedRun, getDisplayPath)}>
+                <div className="poke-chat-head-copy">
+                  <p className="poke-detail-title" title={panelGetRunTitle(selectedRun, getDisplayPath)}>
                     {panelGetRunTitle(selectedRun, getDisplayPath)}
                   </p>
                   {/* Just the log path; focus, agent and turn count are on the list row and the cards. */}
-                  <div className="ai-ins-detail-subtitle" title={t('chat.logTitle', { log: selectedRun.logPath })}>
+                  <div className="poke-detail-subtitle" title={t('chat.logTitle', { log: selectedRun.logPath })}>
                     {selectedRunLogLabel}
                   </div>
                 </div>
               </>
             ) : (
-              <div className="ai-ins-chat-head-copy">
-                <p className="ai-ins-detail-title">{t('chat.newConversation')}</p>
-                <div className="ai-ins-detail-subtitle">{t('chat.newConversationHint', { provider: provider?.label || 'Agent' })}</div>
+              <div className="poke-chat-head-copy">
+                <p className="poke-detail-title">{t('chat.newConversation')}</p>
+                <div className="poke-detail-subtitle">{t('chat.newConversationHint', { provider: provider?.label || 'Agent' })}</div>
               </div>
             )}
             {/* Panel-wide controls, after the conversation's own, past a hairline. */}
             {renderPanelActions()}
           </header>
 
-          <div className="ai-ins-chat-scroll-wrap">
-            <div className="ai-ins-chat-scroll" onScroll={handleOutputScroll} ref={outputRef}>
+          <div className="poke-chat-scroll-wrap">
+            <div className="poke-chat-scroll" onScroll={handleOutputScroll} ref={outputRef}>
               {selectedRun ? renderTranscript(false) : renderNewConversationIntro()}
             </div>
             {selectedRun && outputDetachedFromBottom ? (
-              <button className="ai-ins-output-follow" onClick={handleFollowOutputBottom} type="button">
+              <button className="poke-output-follow" onClick={handleFollowOutputBottom} type="button">
                 <Icon paths={arrowDownIcon} />
                 <span>{t('chat.followLatest')}</span>
               </button>
@@ -2246,38 +2245,38 @@ export function PanelView(props: PanelViewProps & { getDisplayPath: (path: strin
           </div>
 
           <form
-            className="ai-ins-composer"
+            className="poke-composer"
             onSubmit={(event) => {
               event.preventDefault()
               void onSubmit()
             }}
           >
             {repointRun?.canResume ? (
-              <p className="ai-ins-composer-note">
+              <p className="poke-composer-note">
                 {t('composer.repointQuestion')}
-                <button className="ai-ins-msg-link" onClick={onContinueWithTarget} type="button">
+                <button className="poke-msg-link" onClick={onContinueWithTarget} type="button">
                   {t('composer.repointAction', { title: panelTruncate(panelGetRunTitle(repointRun, getDisplayPath), 24) })}
                 </button>
               </p>
             ) : null}
-            {continueBlocked ? <p className="ai-ins-composer-note ai-ins-composer-note-warn">{continueBlockedReason}</p> : null}
+            {continueBlocked ? <p className="poke-composer-note poke-composer-note-warn">{continueBlockedReason}</p> : null}
             {selectedRun?.pendingPermissions?.length ? (
-              <p className="ai-ins-composer-note ai-ins-composer-note-warn">{t('permission.waitingNote', { provider: selectedRun.providerLabel })}</p>
+              <p className="poke-composer-note poke-composer-note-warn">{t('permission.waitingNote', { provider: selectedRun.providerLabel })}</p>
             ) : null}
             {queueing && !queuedPrompt && !selectedRun?.pendingPermissions?.length ? (
-              <p className="ai-ins-composer-note">{t('composer.queueingNote', { provider: selectedRun?.providerLabel || 'Agent' })}</p>
+              <p className="poke-composer-note">{t('composer.queueingNote', { provider: selectedRun?.providerLabel || 'Agent' })}</p>
             ) : null}
-            {continuing && repointed ? <p className="ai-ins-composer-note">{t('composer.repointedNote')}</p> : null}
+            {continuing && repointed ? <p className="poke-composer-note">{t('composer.repointedNote')}</p> : null}
 
-            <div className={`ai-ins-composer-box${continueBlocked ? ' ai-ins-composer-box-blocked' : ''}`}>
-              <div className="ai-ins-target" title={targetTitle}>
-                <span className={`ai-ins-target-badge${continuing ? ' ai-ins-target-badge-continue' : ''}`}>
+            <div className={`poke-composer-box${continueBlocked ? ' poke-composer-box-blocked' : ''}`}>
+              <div className="poke-target" title={targetTitle}>
+                <span className={`poke-target-badge${continuing ? ' poke-target-badge-continue' : ''}`}>
                   {continuing ? t('composer.badgeContinue', { index: selectedRunTurns.length + 1 }) : t('composer.badgeNew')}
                 </span>
-                <span className="ai-ins-target-text">{targetLabel}</span>
+                <span className="poke-target-text">{targetLabel}</span>
                 {/* Only when there is a source location to copy or open (not for the whole project). */}
                 {targetTitle ? (
-                  <span className="ai-ins-target-actions">
+                  <span className="poke-target-actions">
                     <IconButton label={copied ? t('composer.copied') : t('composer.copyLocation')} onClick={() => void handleCopyTarget()} success={copied}>
                       <Icon paths={copied ? checkIcon : copyIcon} />
                     </IconButton>
@@ -2289,7 +2288,7 @@ export function PanelView(props: PanelViewProps & { getDisplayPath: (path: strin
               </div>
 
               <textarea
-                className="ai-ins-textarea"
+                className="poke-textarea"
                 onChange={(event) => handlePromptChange(event.target.value)}
                 onKeyDown={handlePromptKeyDown}
                 placeholder={
@@ -2303,7 +2302,7 @@ export function PanelView(props: PanelViewProps & { getDisplayPath: (path: strin
                 value={prompt}
               />
 
-              <div className="ai-ins-composer-toolbar">
+              <div className="poke-composer-toolbar">
                 <PanelSelect
                   ariaLabel="Agent"
                   disabled={continuing}
@@ -2314,7 +2313,7 @@ export function PanelView(props: PanelViewProps & { getDisplayPath: (path: strin
                 />
                 {provider && !provider.enabled ? (
                   // Standing problem: say it where the user is about to send, not in a toast.
-                  <span className="ai-ins-proxy-chip ai-ins-proxy-chip-warn ai-ins-composer-warning" title={provider.disabledReason || t('status.agentNotConfigured')}>
+                  <span className="poke-proxy-chip poke-proxy-chip-warn poke-composer-warning" title={provider.disabledReason || t('status.agentNotConfigured')}>
                     <span>{provider.disabledReason || t('status.agentNotConfigured')}</span>
                   </span>
                 ) : (
@@ -2323,32 +2322,32 @@ export function PanelView(props: PanelViewProps & { getDisplayPath: (path: strin
                 {/* While a turn runs: stop it here, where the next message is written. Typing still queues. */}
                 {selectedRun && selectedRunWorking ? (
                   <button
-                    className="ai-ins-button ai-ins-button-stop"
+                    className="poke-button poke-button-stop"
                     disabled={selectedRun.stopping}
                     onClick={() => onStopRun(selectedRun)}
                     title={t('chat.stopTitle')}
                     type="button"
                   >
-                    <span className="ai-ins-stop-mark" aria-hidden="true" />
+                    <span className="poke-stop-mark" aria-hidden="true" />
                     {selectedRun.stopping ? t('status.stopping') : t('chat.stop')}
                   </button>
                 ) : null}
                 <button
-                  className="ai-ins-button ai-ins-button-primary ai-ins-send-button"
+                  className="poke-button poke-button-primary poke-send-button"
                   disabled={submitDisabled}
                   title={`${submitLabel} · ${submitShortcutLabel}`}
                   type="submit"
                 >
                   {submitLabel}
-                  <span className="ai-ins-kbd">{submitShortcutLabel}</span>
+                  <span className="poke-kbd">{submitShortcutLabel}</span>
                 </button>
               </div>
             </div>
             {/* Transient news floats over the composer, so nothing below it ever shifts. */}
             {status ? (
-              <div className="ai-ins-toast" role="status">
+              <div className="poke-toast" role="status">
                 <span>{status}</span>
-                <button aria-label={t('settings.close')} className="ai-ins-toast-close" onClick={onDismissStatus} type="button">
+                <button aria-label={t('settings.close')} className="poke-toast-close" onClick={onDismissStatus} type="button">
                   <Icon paths={closeIcon} />
                 </button>
               </div>
@@ -2358,11 +2357,11 @@ export function PanelView(props: PanelViewProps & { getDisplayPath: (path: strin
         )}
       </div>
       {selectedRun && agentPromptTurn ? (
-        <div className="ai-ins-output-modal" onClick={() => setAgentPromptTurnIndex(undefined)}>
+        <div className="poke-output-modal" onClick={() => setAgentPromptTurnIndex(undefined)}>
           <div
             aria-label={t('modal.promptAria', { provider: selectedRun.providerLabel })}
             aria-modal="true"
-            className="ai-ins-output-modal-panel ai-ins-agent-prompt-modal-panel"
+            className="poke-output-modal-panel poke-agent-prompt-modal-panel"
             onClick={(event) => event.stopPropagation()}
             onKeyDown={(event) => {
               if (event.key === 'Escape') {
@@ -2376,20 +2375,20 @@ export function PanelView(props: PanelViewProps & { getDisplayPath: (path: strin
             role="dialog"
             tabIndex={-1}
           >
-            <div className="ai-ins-output-modal-head">
+            <div className="poke-output-modal-head">
               <div>
-                <p className="ai-ins-output-modal-title">
+                <p className="poke-output-modal-title">
                   {t('modal.promptTitle', { index: agentPromptTurn.index + 1, provider: selectedRun.providerLabel })}
                 </p>
-                <div className="ai-ins-output-modal-subtitle">{panelGetRunTitle(selectedRun, getDisplayPath)}</div>
+                <div className="poke-output-modal-subtitle">{panelGetRunTitle(selectedRun, getDisplayPath)}</div>
               </div>
-              <div className="ai-ins-detail-actions">
-                <button className="ai-ins-button" onClick={() => setAgentPromptTurnIndex(undefined)} type="button">
+              <div className="poke-detail-actions">
+                <button className="poke-button" onClick={() => setAgentPromptTurnIndex(undefined)} type="button">
                   {t('panel.close')}
                 </button>
               </div>
             </div>
-            <div className="ai-ins-agent-prompt ai-ins-agent-prompt-modal">
+            <div className="poke-agent-prompt poke-agent-prompt-modal">
               <p>
                 {selectedRunAgentPrompt
                   ? agentPromptTurn.resumed
@@ -2397,7 +2396,7 @@ export function PanelView(props: PanelViewProps & { getDisplayPath: (path: strin
                     : t('modal.promptFirst', { provider: selectedRun.providerLabel })
                   : t('modal.promptMissing', { log: selectedRunLogLabel })}
               </p>
-              <div className="ai-ins-output-code-block ai-ins-agent-prompt-code-block">
+              <div className="poke-output-code-block poke-agent-prompt-code-block">
                 <pre>
                   <code>{selectedRunAgentPrompt || t('modal.logFile', { log: selectedRunLogLabel })}</code>
                 </pre>

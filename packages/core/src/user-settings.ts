@@ -2,14 +2,14 @@ import { chmodSync, existsSync, mkdirSync, readFileSync, renameSync, writeFileSy
 import { homedir } from 'os'
 import { dirname, join } from 'path'
 import { readRequestBody } from './source'
-import type { AiInsMiddleware } from './types'
+import type { PokeMiddleware } from './types'
 
 /**
- * Panel settings shared by every project and browser: `~/.ai-ins/settings.json`
- * (`%USERPROFILE%\.ai-ins\settings.json` on Windows). `AI_INS_HOME` moves the
+ * Panel settings shared by every project and browser: `~/.poke/settings.json`
+ * (`%USERPROFILE%\.poke\settings.json` on Windows). `POKE_HOME` moves the
  * directory, e.g. where the home directory is read-only.
  */
-export type AiInsUserSettings = {
+export type PokeUserSettings = {
   locale?: string
   notify?: boolean
   permissionMode?: string
@@ -24,13 +24,13 @@ const stringKeys = ['locale', 'permissionMode', 'provider', 'proxy', 'proxyMode'
 const maxValueLength = 2000
 
 export function getUserSettingsPath() {
-  const directory = process.env.AI_INS_HOME?.trim() || join(homedir(), '.ai-ins')
+  const directory = process.env.POKE_HOME?.trim() || join(homedir(), '.poke')
   return join(directory, 'settings.json')
 }
 
 /** Keep known keys with values of the right type; drop everything else. */
-export function sanitizeUserSettings(value: unknown): AiInsUserSettings {
-  const settings: AiInsUserSettings = {}
+export function sanitizeUserSettings(value: unknown): PokeUserSettings {
+  const settings: PokeUserSettings = {}
   if (!value || typeof value !== 'object' || Array.isArray(value)) return settings
   const record = value as Record<string, unknown>
   for (const key of stringKeys) {
@@ -42,7 +42,7 @@ export function sanitizeUserSettings(value: unknown): AiInsUserSettings {
 }
 
 /** `exists` is false before the first save, which is when the panel migrates browser settings. */
-export function readUserSettings(fileName = getUserSettingsPath()): { exists: boolean; settings: AiInsUserSettings } {
+export function readUserSettings(fileName = getUserSettingsPath()): { exists: boolean; settings: PokeUserSettings } {
   if (!existsSync(fileName)) return { exists: false, settings: {} }
   try {
     return { exists: true, settings: sanitizeUserSettings(JSON.parse(readFileSync(fileName, 'utf-8'))) }
@@ -53,7 +53,7 @@ export function readUserSettings(fileName = getUserSettingsPath()): { exists: bo
 }
 
 /** Merge `patch` in (an empty string clears a key) and write atomically. */
-export function writeUserSettings(patch: AiInsUserSettings, fileName = getUserSettingsPath()) {
+export function writeUserSettings(patch: PokeUserSettings, fileName = getUserSettingsPath()) {
   const next: Record<string, unknown> = { ...readUserSettings(fileName).settings }
   for (const [key, value] of Object.entries(sanitizeUserSettings(patch))) {
     if (value === '') delete next[key]
@@ -70,11 +70,11 @@ export function writeUserSettings(patch: AiInsUserSettings, fileName = getUserSe
   } catch {
     // Windows and some file systems have no POSIX modes; nothing to do.
   }
-  return next as AiInsUserSettings
+  return next as PokeUserSettings
 }
 
 /** `GET` the settings, `POST` a partial update. */
-export function aiInsSettingsMiddleware(): AiInsMiddleware {
+export function pokeSettingsMiddleware(): PokeMiddleware {
   return async (req, res) => {
     res.setHeader('Content-Type', 'application/json')
     try {

@@ -1,4 +1,4 @@
-import type { AiInsAgentProviderInput, AiInsClientAgentProvider, AiInsPluginOptions, ResolvedAiInsAgentProvider } from './types'
+import type { PokeAgentProviderInput, PokeClientAgentProvider, PokePluginOptions, ResolvedPokeAgentProvider } from './types'
 import { getUnsupportedAgentSession, resolveAgentSession } from './agent-session'
 import { resolveCommand } from './editor'
 import { getSupportedPermissionModes } from './permissions'
@@ -8,7 +8,7 @@ function getModelArgs(flag: string, model: string) {
   return model ? [flag, model] : []
 }
 
-function areSessionsEnabled(options: AiInsPluginOptions) {
+function areSessionsEnabled(options: PokePluginOptions) {
   return options.agents?.sessions !== false
 }
 
@@ -20,8 +20,8 @@ function areSessionsEnabled(options: AiInsPluginOptions) {
  * the top-level command instead, which is why resume rebuilds the whole line
  * rather than appending to the fresh one.
  */
-function getCodexProvider(root: string, options: AiInsPluginOptions, proxy: string): ResolvedAiInsAgentProvider {
-  const model = options.codex?.model || process.env.AI_INS_CODEX_MODEL || ''
+function getCodexProvider(root: string, options: PokePluginOptions, proxy: string): ResolvedPokeAgentProvider {
+  const model = options.codex?.model || process.env.POKE_CODEX_MODEL || ''
   const modelArgs = getModelArgs('--model', model)
   const sessions = areSessionsEnabled(options)
   // Approval and sandbox flags go before `exec` so the same position works for
@@ -78,8 +78,8 @@ function getCodexProvider(root: string, options: AiInsPluginOptions, proxy: stri
 }
 
 /** Claude lets us pin the id up front, so turn 0 already knows how to resume. */
-function getClaudeProvider(options: AiInsPluginOptions, proxy: string): ResolvedAiInsAgentProvider {
-  const model = options.claude?.model || process.env.AI_INS_CLAUDE_MODEL || ''
+function getClaudeProvider(options: PokePluginOptions, proxy: string): ResolvedPokeAgentProvider {
+  const model = options.claude?.model || process.env.POKE_CLAUDE_MODEL || ''
   const modelArgs = getModelArgs('--model', model)
   const sessions = areSessionsEnabled(options)
   const streamArgs = ['{permissionArgs}', '--output-format', 'stream-json', '--verbose', '--include-partial-messages']
@@ -93,7 +93,7 @@ function getClaudeProvider(options: AiInsPluginOptions, proxy: string): Resolved
     label: 'Claude Cli',
     output: 'jsonl',
     permissions: {
-      // `-p` cannot show Claude's own approval prompt; the AI Ins MCP bridge
+      // `-p` cannot show Claude's own approval prompt; the Poke MCP bridge
       // answers it from the panel instead.
       ask: ['--permission-mode', 'acceptEdits', '--permission-prompt-tool', 'mcp__ai_ins__approve', '--mcp-config', '{permissionMcpConfig}'],
       edit: ['--permission-mode', 'acceptEdits'],
@@ -115,8 +115,8 @@ function getClaudeProvider(options: AiInsPluginOptions, proxy: string): Resolved
 }
 
 /** Copilot reuses one `--session-id` flag for both "pin this id" and "resume it". */
-function getCopilotProvider(options: AiInsPluginOptions, proxy: string): ResolvedAiInsAgentProvider {
-  const model = options.copilot?.model || process.env.AI_INS_COPILOT_MODEL || ''
+function getCopilotProvider(options: PokePluginOptions, proxy: string): ResolvedPokeAgentProvider {
+  const model = options.copilot?.model || process.env.POKE_COPILOT_MODEL || ''
   const modelArgs = getModelArgs('--model', model)
   const baseArgs = ['--allow-all-tools', '--no-color', '--silent', '--stream', 'on']
 
@@ -149,8 +149,8 @@ function getCopilotProvider(options: AiInsPluginOptions, proxy: string): Resolve
  * panel simply keeps "continue" disabled, so an inaccurate key degrades to
  * today's behaviour instead of silently starting a context-free run.
  */
-function getCursorProvider(options: AiInsPluginOptions, proxy: string): ResolvedAiInsAgentProvider {
-  const model = options.cursor?.model || process.env.AI_INS_CURSOR_MODEL || ''
+function getCursorProvider(options: PokePluginOptions, proxy: string): ResolvedPokeAgentProvider {
+  const model = options.cursor?.model || process.env.POKE_CURSOR_MODEL || ''
   const modelArgs = getModelArgs('--model', model)
   const baseArgs = ['--print', '--output-format', 'stream-json']
 
@@ -181,8 +181,8 @@ function getCursorProvider(options: AiInsPluginOptions, proxy: string): Resolved
  * Gemini CLI has no resume flag we could verify for non-interactive runs, so it
  * stays single-turn rather than shipping a guess.
  */
-function getGeminiProvider(options: AiInsPluginOptions, proxy: string): ResolvedAiInsAgentProvider {
-  const model = options.gemini?.model || process.env.AI_INS_GEMINI_MODEL || process.env.GEMINI_MODEL || ''
+function getGeminiProvider(options: PokePluginOptions, proxy: string): ResolvedPokeAgentProvider {
+  const model = options.gemini?.model || process.env.POKE_GEMINI_MODEL || process.env.GEMINI_MODEL || ''
 
   return {
     args: ['--output-format', 'json', ...getModelArgs('--model', model)],
@@ -197,7 +197,7 @@ function getGeminiProvider(options: AiInsPluginOptions, proxy: string): Resolved
   }
 }
 
-function getBuiltinAgentProviders(root: string, options: AiInsPluginOptions, pluginProxy: string): ResolvedAiInsAgentProvider[] {
+function getBuiltinAgentProviders(root: string, options: PokePluginOptions, pluginProxy: string): ResolvedPokeAgentProvider[] {
   return [
     getCodexProvider(root, options, getConfiguredAgentProxy(options.codex?.proxy, pluginProxy)),
     getClaudeProvider(options, getConfiguredAgentProxy(options.claude?.proxy, pluginProxy)),
@@ -208,10 +208,10 @@ function getBuiltinAgentProviders(root: string, options: AiInsPluginOptions, plu
 }
 
 function mergeAgentProvider(
-  base: ResolvedAiInsAgentProvider | undefined,
-  input: AiInsAgentProviderInput,
+  base: ResolvedPokeAgentProvider | undefined,
+  input: PokeAgentProviderInput,
   pluginProxy: string,
-): ResolvedAiInsAgentProvider {
+): ResolvedPokeAgentProvider {
   const resolvedInput = input.input ?? base?.input ?? 'stdin'
 
   return {
@@ -236,7 +236,7 @@ function mergeAgentProvider(
   }
 }
 
-export function resolveAgentProviders(root: string, options: AiInsPluginOptions, pluginProxy: string) {
+export function resolveAgentProviders(root: string, options: PokePluginOptions, pluginProxy: string) {
   const providers = new Map(getBuiltinAgentProviders(root, options, pluginProxy).map((provider) => [provider.id, provider]))
 
   for (const providerInput of options.agents?.providers ?? []) {
@@ -268,7 +268,7 @@ export function resolveAgentProviders(root: string, options: AiInsPluginOptions,
   })
 }
 
-export function getClientAgentProviders(root: string, options: AiInsPluginOptions, pluginProxy: string): AiInsClientAgentProvider[] {
+export function getClientAgentProviders(root: string, options: PokePluginOptions, pluginProxy: string): PokeClientAgentProvider[] {
   return resolveAgentProviders(root, options, pluginProxy).map((provider) => ({
     disabledReason: provider.disabledReason,
     enabled: provider.enabled,

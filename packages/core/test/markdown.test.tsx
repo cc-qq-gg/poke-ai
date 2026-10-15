@@ -24,8 +24,8 @@ describe('MarkdownView', () => {
   it('renders nested, ordered and task lists', () => {
     const html = render('1. first\n   - child\n2. second\n\n- [x] done\n- [ ] todo')
     expect(html).toMatch(/<ol><li>.*first.*<ul><li>.*child.*<\/li><\/ul><\/li>/)
-    expect(html).toMatch(/<li class="ai-ins-output-task"><input[^>]*checked=""[^>]*\/><span>done<\/span><\/li>/)
-    expect(html).toMatch(/<li class="ai-ins-output-task"><input(?![^>]*checked)[^>]*\/><span>todo<\/span><\/li>/)
+    expect(html).toMatch(/<li class="poke-output-task"><input[^>]*checked=""[^>]*\/><span>done<\/span><\/li>/)
+    expect(html).toMatch(/<li class="poke-output-task"><input(?![^>]*checked)[^>]*\/><span>todo<\/span><\/li>/)
     expect(html).not.toContain('[x]')
   })
 
@@ -58,14 +58,14 @@ describe('MarkdownView', () => {
 
   it('adds a copy button and language label to code blocks', () => {
     const html = render('```ts\nconst a = 1 < 2\n```')
-    expect(html).toContain('ai-ins-output-code-copy')
+    expect(html).toContain('poke-output-code-copy')
     expect(html).toContain('>ts</span>')
     expect(html).toContain('const a = 1 &lt; 2')
   })
 
   it('makes inline file paths open in the IDE only when a handler is given', () => {
-    expect(render('see `src/components/Topbar.astro:12`', () => {})).toContain('class="ai-ins-output-file-link"')
-    expect(render('see `src/components/Topbar.astro:12`')).not.toContain('ai-ins-output-file-link')
+    expect(render('see `src/components/Topbar.astro:12`', () => {})).toContain('class="poke-output-file-link"')
+    expect(render('see `src/components/Topbar.astro:12`')).not.toContain('poke-output-file-link')
   })
 })
 

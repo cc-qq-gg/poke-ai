@@ -45,12 +45,12 @@ export const localeNames: Record<Locale, string> = {
 }
 
 declare global {
-  /** Also saves the setting to ~/.ai-ins/settings.json (see client/api.js). */
-  var aiInsRememberSetting: ((storageKey: string, value: string) => void) | undefined
+  /** Also saves the setting to ~/.poke/settings.json (see client/api.js). */
+  var pokeRememberSetting: ((storageKey: string, value: string) => void) | undefined
 }
 
 const defaultLocale: Locale = 'en'
-const localeStorageKey = 'ai-ins-locale'
+const localeStorageKey = 'poke-locale'
 const listeners = new Set<() => void>()
 
 function isLocale(value: unknown): value is Locale {
@@ -113,7 +113,7 @@ export function setLocalePreference(next: LocalePreference) {
   locale = next === 'auto' ? detectBrowserLocale() : next
   try {
     window.localStorage.setItem(localeStorageKey, next)
-    globalThis.aiInsRememberSetting?.(localeStorageKey, next)
+    globalThis.pokeRememberSetting?.(localeStorageKey, next)
   } catch {
     // Ignore storage restrictions in embedded browsers.
   }
@@ -144,8 +144,8 @@ export function isMessageKey(value: unknown): value is MessageKey {
 }
 
 declare global {
-  var aiInsI18n: { getLocale: typeof getLocale; t: typeof t } | undefined
+  var pokeI18n: { getLocale: typeof getLocale; t: typeof t } | undefined
 }
 
 // The non-React client scripts (run-events.js, …) share this translator.
-globalThis.aiInsI18n = { getLocale, t }
+globalThis.pokeI18n = { getLocale, t }

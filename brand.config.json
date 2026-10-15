@@ -1,0 +1,25 @@
+{
+  "$comment": "Single source of truth for project branding. Edit `to`, run `pnpm brand:apply`, then `pnpm install && pnpm build && pnpm test` and commit. Order of replacements is defined in scripts/brand.mjs (scope before kebab so @ai-ins never becomes @poke).",
+  "from": {
+    "scope": "@ai-ins",
+    "pascal": "AiIns",
+    "camel": "aiIns",
+    "upper": "AI_INS",
+    "titleSpaced": "AI Ins",
+    "kebab": "ai-ins"
+  },
+  "to": {
+    "scope": "@poke-dev",
+    "pascal": "Poke",
+    "camel": "poke",
+    "upper": "POKE",
+    "titleSpaced": "Poke",
+    "kebab": "poke"
+  },
+  "meta": {
+    "productName": "Poke",
+    "cliCommand": "poke",
+    "npmScope": "@poke-dev",
+    "repoUrl": "https://github.com/wangrongding/poke"
+  }
+}

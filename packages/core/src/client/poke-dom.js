@@ -4,7 +4,7 @@ function clearOverlay() {
   }
 
   for (const target of document.querySelectorAll(`[${targetAttribute}]`)) {
-    delete target.dataset.aiInsTarget
+    delete target.dataset.pokeTarget
   }
 
   currentTarget = undefined
@@ -14,25 +14,25 @@ function cleanUp() {
   clearOverlay()
 }
 
-function closeAiInsPanel() {
-  if (!aiInsPanel) {
+function closePokePanel() {
+  if (!pokePanel) {
     return
   }
 
-  if (typeof unmountAiInsPanel === 'function') {
-    unmountAiInsPanel()
+  if (typeof unmountPokePanel === 'function') {
+    unmountPokePanel()
   } else {
-    globalThis.aiInsPanelRuntime?.unmountAiInsPanel()
+    globalThis.pokePanelRuntime?.unmountPokePanel()
   }
-  aiInsPanel.remove()
-  aiInsPanel = undefined
+  pokePanel.remove()
+  pokePanel = undefined
   panelRefs = undefined
-  globalThis.aiInsPanelRuntime?.updateDockButton()
+  globalThis.pokePanelRuntime?.updateDockButton()
 }
 
 // Astro dev（devToolbar 开启时）会给 .astro 模板里的元素输出
 // data-astro-source-file="<绝对路径>" 与 data-astro-source-loc="<行>:<列>"，
-// 作为 data-ai-ins-source 缺失时的回退，无需运行时改写 DOM。
+// 作为 data-poke-source 缺失时的回退，无需运行时改写 DOM。
 const astroSourceFileAttribute = 'data-astro-source-file'
 const astroSourceLocAttribute = 'data-astro-source-loc'
 const sourceElementSelector = `[${sourceAttribute}], [${astroSourceFileAttribute}]`
@@ -329,7 +329,7 @@ function installDockDrag() {
     if (movedDistance > 4) {
       dockPointerState.didDrag = true
       suppressDockClick = true
-      dockButton.classList.add('ai-ins-dock-dragging')
+      dockButton.classList.add('poke-dock-dragging')
     }
 
     event.preventDefault()
@@ -346,7 +346,7 @@ function installDockDrag() {
 
     const didDrag = dockPointerState.didDrag
     dockButton.releasePointerCapture?.(event.pointerId)
-    dockButton.classList.remove('ai-ins-dock-dragging')
+    dockButton.classList.remove('poke-dock-dragging')
     dockPointerState = undefined
 
     if (didDrag) {
@@ -364,7 +364,7 @@ function installDockDrag() {
     }
 
     dockButton.releasePointerCapture?.(event.pointerId)
-    dockButton.classList.remove('ai-ins-dock-dragging')
+    dockButton.classList.remove('poke-dock-dragging')
     dockPointerState = undefined
     suppressDockClick = false
   })

@@ -1,17 +1,17 @@
 {
-  "name": "@ai-ins/core",
+  "name": "@poke-dev/core",
   "version": "1.0.4",
-  "description": "Core runtime for AI Ins bundler plugins.",
+  "description": "Core runtime for Poke bundler plugins.",
   "author": "Rongding Wang <wangrongding@qq.com> (https://github.com/wangrongding)",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/wangrongding/ai-ins.git",
+    "url": "git+https://github.com/wangrongding/poke.git",
     "directory": "packages/core"
   },
   "bugs": {
-    "url": "https://github.com/wangrongding/ai-ins/issues"
+    "url": "https://github.com/wangrongding/poke/issues"
   },
-  "homepage": "https://github.com/wangrongding/ai-ins/tree/main/packages/core",
+  "homepage": "https://github.com/wangrongding/poke/tree/main/packages/core",
   "type": "module",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
@@ -42,6 +42,7 @@
   "devDependencies": {
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
+    "esbuild": "0.27.7",
     "marked": "^18.1.0",
     "react": "^19.2.5",
     "react-dom": "^19.2.5",

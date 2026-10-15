@@ -4,12 +4,12 @@
   "commit": false,
   "fixed": [
     [
-      "ai-ins",
-      "@ai-ins/core",
-      "@ai-ins/vite",
-      "@ai-ins/webpack",
-      "@ai-ins/nextjs",
-      "@ai-ins/astro"
+      "poke",
+      "@poke-dev/core",
+      "@poke-dev/vite",
+      "@poke-dev/webpack",
+      "@poke-dev/nextjs",
+      "@poke-dev/astro"
     ]
   ],
   "linked": [],
@@ -17,12 +17,12 @@
   "baseBranch": "main",
   "updateInternalDependencies": "patch",
   "ignore": [
-    "@ai-ins/playground-vite",
-    "@ai-ins/playground-vite-vue3",
-    "@ai-ins/playground-vite-solidjs",
-    "@ai-ins/playground-vite-svelte",
-    "@ai-ins/playground-nextjs",
-    "@ai-ins/playground-webpack",
-    "@ai-ins/playground-astro"
+    "@poke-dev/playground-vite",
+    "@poke-dev/playground-vite-vue3",
+    "@poke-dev/playground-vite-solidjs",
+    "@poke-dev/playground-vite-svelte",
+    "@poke-dev/playground-nextjs",
+    "@poke-dev/playground-webpack",
+    "@poke-dev/playground-astro"
   ]
 }

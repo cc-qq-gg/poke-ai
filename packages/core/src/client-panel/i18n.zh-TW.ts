@@ -257,7 +257,7 @@ export const zhTW: MessageCatalog = {
   'settings.permissionFixed': '{provider} 的權限由它自己的啟動參數決定，這裡的設定對它無效。',
   'turn.fullAccess': '完整存取',
   'dock.waitingPermission': '{count} 個對話等待授權',
-  'dock.open': '開啟 AI Ins',
+  'dock.open': '開啟 Poke',
   'error.permissionGone': '這個授權要求已經失效了（Agent 可能已經結束）。',
   'error.diffGone': '這個檔案的 diff 已經不存在了',
 
@@ -272,7 +272,7 @@ export const zhTW: MessageCatalog = {
   // Dock button
   'dock.running': '{count} 個對話執行中',
   'dock.unread': '{count} 個對話有新結果',
-  'dock.total': '{count} 個 AI Ins 對話',
+  'dock.total': '{count} 個 Poke 對話',
 
   // Live activity and reasoning
   'thinking.live': '思考中',

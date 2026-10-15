@@ -262,7 +262,7 @@ export const ptBR: MessageCatalog = {
   'settings.permissionFixed': 'As permissões de {provider} são definidas pelos próprios parâmetros de inicialização dele; esta configuração não se aplica a ele.',
   'turn.fullAccess': 'Acesso total',
   'dock.waitingPermission': { one: '{count} conversa aguardando aprovação', other: '{count} conversas aguardando aprovação' },
-  'dock.open': 'Abrir AI Ins',
+  'dock.open': 'Abrir Poke',
   'error.permissionGone': 'Esta solicitação de permissão não é mais válida (o Agent pode ter terminado).',
   'error.diffGone': 'O diff deste arquivo não está mais disponível',
 
@@ -277,7 +277,7 @@ export const ptBR: MessageCatalog = {
   // Dock button
   'dock.running': { one: '{count} conversa em execução', other: '{count} conversas em execução' },
   'dock.unread': { one: '{count} conversa com resultado novo', other: '{count} conversas com resultado novo' },
-  'dock.total': { one: '{count} conversa do AI Ins', other: '{count} conversas do AI Ins' },
+  'dock.total': { one: '{count} conversa do Poke', other: '{count} conversas do Poke' },
 
   // Live activity and reasoning
   'thinking.live': 'Pensando',

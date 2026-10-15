@@ -1,12 +1,12 @@
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http'
 import { existsSync } from 'node:fs'
 import { join } from 'node:path'
-import { createAiInsMiddlewares, getAiInsClientCode, normalizeProxy } from '@ai-ins/core'
-import type { AiInsMiddleware, AiInsPluginOptions } from '@ai-ins/core'
+import { createPokeMiddlewares, getPokeClientCode, normalizeProxy } from '@poke-dev/core'
+import type { PokeMiddleware, PokePluginOptions } from '@poke-dev/core'
 
-export type { AiInsPluginOptions }
+export type { PokePluginOptions }
 
-export type AiInsNextPluginOptions = AiInsPluginOptions & {
+export type PokeNextPluginOptions = PokePluginOptions & {
   middlewarePort?: number
 }
 
@@ -42,14 +42,14 @@ type WebpackContext = {
   isServer?: boolean
 }
 
-type AiInsServerState = {
+type PokeServerState = {
   port: number
   server: Server
 }
 
 const packageDirectory = __dirname
 const developmentPhase = 'phase-development-server'
-const aiInsServers = new Map<string, Promise<AiInsServerState>>()
+const pokeServers = new Map<string, Promise<PokeServerState>>()
 
 function getBundledAssetPath(fileName: string) {
   const sourcePath = join(packageDirectory, '..', 'src', fileName)
@@ -89,41 +89,41 @@ function normalizeRoot(root: string | undefined) {
   return root || process.cwd()
 }
 
-function getServerKey(root: string, options: AiInsNextPluginOptions) {
+function getServerKey(root: string, options: PokeNextPluginOptions) {
   return `${root}:${options.middlewarePort ?? 0}`
 }
 
-function dispatch(routes: Array<{ middleware: AiInsMiddleware; path: string }>, req: IncomingMessage, res: ServerResponse) {
+function dispatch(routes: Array<{ middleware: PokeMiddleware; path: string }>, req: IncomingMessage, res: ServerResponse) {
   const pathname = req.url ? new URL(req.url, 'http://localhost').pathname : '/'
   const route = routes.find((candidate) => pathname === candidate.path || pathname.startsWith(`${candidate.path}/`))
 
   if (!route) {
     res.statusCode = 404
-    res.end('AI Ins route not found')
+    res.end('Poke route not found')
     return
   }
 
   route.middleware(req, res)
 }
 
-function startAiInsServer(root: string, options: AiInsNextPluginOptions) {
+function startPokeServer(root: string, options: PokeNextPluginOptions) {
   const key = getServerKey(root, options)
-  const existing = aiInsServers.get(key)
+  const existing = pokeServers.get(key)
   if (existing) {
     return existing
   }
 
-  const promise = new Promise<AiInsServerState>((resolve, reject) => {
+  const promise = new Promise<PokeServerState>((resolve, reject) => {
     const pluginProxy = normalizeProxy(options.codex?.proxy ?? options.proxy)
     const routes = [
       {
-        path: '/__ai-ins/client.js',
+        path: '/__poke/client.js',
         middleware: (_req: IncomingMessage, res: ServerResponse) => {
           res.setHeader('Content-Type', 'application/javascript; charset=utf-8')
-          res.end(getAiInsClientCode({ base: '/', defaultProvider: options.agents?.defaultProvider, options, pluginProxy, root }))
+          res.end(getPokeClientCode({ base: '/', defaultProvider: options.agents?.defaultProvider, options, pluginProxy, root }))
         },
       },
-      ...createAiInsMiddlewares(root, options),
+      ...createPokeMiddlewares(root, options),
     ].sort((left, right) => right.path.length - left.path.length)
 
     const server = createServer((req, res) => dispatch(routes, req, res))
@@ -132,7 +132,7 @@ function startAiInsServer(root: string, options: AiInsNextPluginOptions) {
       server.off('error', reject)
       const address = server.address()
       if (!address || typeof address === 'string') {
-        reject(new Error('failed to start AI Ins middleware server'))
+        reject(new Error('failed to start Poke middleware server'))
         return
       }
 
@@ -140,7 +140,7 @@ function startAiInsServer(root: string, options: AiInsNextPluginOptions) {
     })
   })
 
-  aiInsServers.set(key, promise)
+  pokeServers.set(key, promise)
   return promise
 }
 
@@ -158,7 +158,7 @@ function appendWebpackRule(config: WebpackConfig) {
   ]
 }
 
-function withWebpackConfig(config: NextConfig, options: AiInsNextPluginOptions): NextConfig {
+function withWebpackConfig(config: NextConfig, options: PokeNextPluginOptions): NextConfig {
   const previousWebpack = config.webpack as ((config: WebpackConfig, context: WebpackContext) => WebpackConfig) | null | undefined
 
   return {
@@ -176,7 +176,7 @@ function withWebpackConfig(config: NextConfig, options: AiInsNextPluginOptions):
   }
 }
 
-function withTurbopackConfig(config: NextConfig, options: AiInsNextPluginOptions): NextConfig {
+function withTurbopackConfig(config: NextConfig, options: PokeNextPluginOptions): NextConfig {
   if (options.disableSourceAttributes) {
     return config
   }
@@ -209,14 +209,14 @@ async function resolveRewrites(rewrites: NextRewrites | undefined) {
 }
 
 async function mergeRewrites(rewrites: NextRewrites | undefined, middlewarePort: number) {
-  const aiInsRewrites: Rewrite[] = [
+  const pokeRewrites: Rewrite[] = [
     {
-      source: '/__ai-ins/:path*',
-      destination: `http://127.0.0.1:${middlewarePort}/__ai-ins/:path*`,
+      source: '/__poke/:path*',
+      destination: `http://127.0.0.1:${middlewarePort}/__poke/:path*`,
     },
     {
-      source: '/__ai-ins-agent/:path*',
-      destination: `http://127.0.0.1:${middlewarePort}/__ai-ins-agent/:path*`,
+      source: '/__poke-agent/:path*',
+      destination: `http://127.0.0.1:${middlewarePort}/__poke-agent/:path*`,
     },
     {
       source: '/__open-in-editor',
@@ -230,16 +230,16 @@ async function mergeRewrites(rewrites: NextRewrites | undefined, middlewarePort:
   const existing = await resolveRewrites(rewrites)
 
   if (Array.isArray(existing)) {
-    return [...aiInsRewrites, ...existing]
+    return [...pokeRewrites, ...existing]
   }
 
   return {
     ...existing,
-    beforeFiles: [...aiInsRewrites, ...(existing.beforeFiles ?? [])],
+    beforeFiles: [...pokeRewrites, ...(existing.beforeFiles ?? [])],
   }
 }
 
-export function withAiIns(nextConfig: NextConfigExport = {}, options: AiInsNextPluginOptions = {}) {
+export function withPoke(nextConfig: NextConfigExport = {}, options: PokeNextPluginOptions = {}) {
   return async (phase: string, context?: unknown) => {
     const resolvedConfig = typeof nextConfig === 'function' ? await nextConfig(phase, context) : nextConfig
     const root = normalizeRoot(typeof context === 'object' && context && 'dir' in context ? String((context as { dir?: unknown }).dir ?? '') : undefined)
@@ -249,7 +249,7 @@ export function withAiIns(nextConfig: NextConfigExport = {}, options: AiInsNextP
       return config
     }
 
-    const { port } = await startAiInsServer(root, options)
+    const { port } = await startPokeServer(root, options)
     const previousRewrites = config.rewrites
 
     return {
@@ -261,5 +261,5 @@ export function withAiIns(nextConfig: NextConfigExport = {}, options: AiInsNextP
   }
 }
 
-export const aiIns = withAiIns
-export default withAiIns
+export const poke = withPoke
+export default withPoke

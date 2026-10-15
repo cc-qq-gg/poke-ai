@@ -12,10 +12,11 @@ import { getLocale, getLocalePreference, isMessageKey, onLocaleChange, reloadLoc
 import type { FileDiffData } from './FileDiff'
 import { type NotifyKind, notifyRunEvent } from './notifications'
 import { PanelView } from './PanelView'
+import { createBrandGlyphElement } from './icons'
 import type { AgentProvider, AgentRun, WorkspaceChanges, LayerTarget, PermissionDecision, PermissionMode, PermissionRequest, ProxyMode } from './types'
 
 declare global {
-  var aiInsPanelRuntime:
+  var pokePanelRuntime:
     | {
         applyUserSettings: () => void
         flushQueuedPrompt: (run: AgentRun) => void
@@ -25,8 +26,8 @@ declare global {
         refreshRunDetail: () => void
         refreshRunList: () => void
         restoreQueuedPrompts: () => void
-        showAiInsPanel: (layer?: LayerTarget, layers?: LayerTarget[]) => void
-        unmountAiInsPanel: () => void
+        showPokePanel: (layer?: LayerTarget, layers?: LayerTarget[]) => void
+        unmountPokePanel: () => void
         updateDockButton: () => void
       }
     | undefined
@@ -46,7 +47,7 @@ type AgentTurnResult = {
 
 declare const defaultAgentProviderId: string
 declare const defaultProxy: string
-declare let aiInsPanel: HTMLElement | undefined
+declare let pokePanel: HTMLElement | undefined
 declare let continueTarget: { layer: LayerTarget; layers: LayerTarget[] } | undefined
 declare let dockButton: HTMLButtonElement | undefined
 declare let draftTarget: { layer: LayerTarget; layers: LayerTarget[] } | undefined
@@ -61,7 +62,7 @@ declare const runs: AgentRun[]
 
 declare function appendRunTurn(result: AgentTurnResult, layer: LayerTarget | undefined, provider: AgentProvider, prompt: string): void
 declare function applyDockPosition(): void
-declare function closeAiInsPanel(): void
+declare function closePokePanel(): void
 declare function createElement(tag: string, className?: string, text?: string): HTMLElement
 declare function createRun(result: AgentTurnResult, layer: LayerTarget | undefined, provider: AgentProvider, prompt: string): void
 declare function clearFinishedRuns(): Promise<void>
@@ -83,7 +84,7 @@ declare function stageWorkspaceFiles(paths: string[], staged: boolean): Promise<
 declare function readStoredProviderId(): string
 declare function readStoredProxy(): string
 declare function readStoredProxyMode(): string
-declare function runAiInsAgent(
+declare function runPokeAgent(
   layer: LayerTarget | undefined,
   layers: LayerTarget[] | undefined,
   providerId: string,
@@ -143,7 +144,7 @@ function getContinueRun() {
  * Option / Alt pick is a passing new conversation and does not overwrite it.
  * Stored per dev server origin, like the rest of the panel's browser state.
  */
-const lastConversationStorageKey = 'ai-ins-last-conversation'
+const lastConversationStorageKey = 'poke-last-conversation'
 
 function rememberOpenConversation(runId: string | undefined) {
   try {
@@ -166,7 +167,7 @@ function restoreLastConversation() {
   // Deleted since (here or in another tab): fall back to a new conversation.
   if (!runId || !runs.some((run) => run.id === runId)) return
   selectedRunId = runId
-  renderAiInsPanel()
+  renderPokePanel()
 }
 
 function openConversation(runId: string, target?: { layer: LayerTarget; layers: LayerTarget[] }) {
@@ -180,7 +181,7 @@ function openConversation(runId: string, target?: { layer: LayerTarget; layers: 
   continueTarget = target
   repointRunId = undefined
   panelStatus = ''
-  renderAiInsPanel()
+  renderPokePanel()
   focusPanelTextarea()
   if (!run.outputLoaded) {
     void loadRunDetail(run)
@@ -195,13 +196,13 @@ function startNewConversation() {
   draftTarget = undefined
   repointRunId = undefined
   panelStatus = ''
-  renderAiInsPanel()
+  renderPokePanel()
   focusPanelTextarea()
 }
 
 function focusPanelTextarea() {
   window.setTimeout(() => {
-    const textarea = aiInsPanel?.querySelector('.ai-ins-textarea')
+    const textarea = pokePanel?.querySelector('.poke-textarea')
     if (textarea instanceof HTMLTextAreaElement && !textarea.disabled) {
       textarea.focus()
     }
@@ -245,7 +246,7 @@ function setPanelStatus(value: string) {
       if (panelStatus === value) setPanelStatus('')
     }, 5000)
   }
-  renderAiInsPanel()
+  renderPokePanel()
 }
 
 function getTargetLabels(layerTarget: { layer: LayerTarget } | undefined) {
@@ -317,7 +318,7 @@ function cancelQueuedPrompt(runId: string) {
   queuedPrompts.delete(runId)
   saveQueuedPrompts(queuedPrompts)
   returnTextToDraft(runId, prompt)
-  renderAiInsPanel()
+  renderPokePanel()
 }
 
 /** Called whenever a conversation settles: send its queued follow-up, or hand it back. */
@@ -339,7 +340,7 @@ function flushQueuedPrompt(run: AgentRun) {
   if (selectedRunId === run.id) {
     panelStatus = t('status.queueReturned')
   }
-  renderAiInsPanel()
+  renderPokePanel()
 }
 
 /**
@@ -358,11 +359,11 @@ function restoreQueuedPrompts() {
 
   if (changed) {
     saveQueuedPrompts(queuedPrompts)
-    renderAiInsPanel()
+    renderPokePanel()
   }
 }
 
-function renderAiInsPanel() {
+function renderPokePanel() {
   if (!panelRoot) {
     return
   }
@@ -396,7 +397,7 @@ function renderAiInsPanel() {
       onClearFinishedRuns={() => {
         void clearFinishedRuns()
       }}
-      onClose={closeAiInsPanel}
+      onClose={closePokePanel}
       onContinueWithTarget={() => {
         if (repointRun && draftTarget) {
           openConversation(repointRun.id, draftTarget)
@@ -447,7 +448,7 @@ function renderAiInsPanel() {
       onPermissionModeChange={(value) => {
         permissionModeValue = value
         savePermissionMode(value)
-        renderAiInsPanel()
+        renderPokePanel()
       }}
       onOpenInEditor={async () => {
         const layerPath = activeTarget?.layer?.path || continueRun?.sourcePath
@@ -457,24 +458,24 @@ function renderAiInsPanel() {
       }}
       onPromptChange={(value) => {
         setPromptValue(value)
-        renderAiInsPanel()
+        renderPokePanel()
       }}
       onProviderChange={(value) => {
         providerValue = value
         panelStatus = ''
         saveStoredProviderId(value)
-        renderAiInsPanel()
+        renderPokePanel()
       }}
       onProxyChange={(value) => {
         proxyValue = value
-        renderAiInsPanel()
+        renderPokePanel()
       }}
       onProxyModeChange={(value) => {
         proxyModeValue = value
-        renderAiInsPanel()
+        renderPokePanel()
       }}
       onSelectRun={(runId) => openConversation(runId)}
-      onSubmit={submitAiInsPrompt}
+      onSubmit={submitPokePrompt}
       permissionMode={permissionModeValue}
       prompt={promptValue}
       queuedPrompt={selectedRunId ? queuedPrompts.get(selectedRunId) : undefined}
@@ -499,7 +500,7 @@ function renderAiInsPanel() {
 async function answerPermission(run: AgentRun, request: PermissionRequest, decision: PermissionDecision) {
   // Optimistic: the card goes away at once; the SSE `permission-resolved` confirms it.
   run.pendingPermissions = run.pendingPermissions.filter((candidate) => candidate.id !== request.id)
-  renderAiInsPanel()
+  renderPokePanel()
   updateDockButton()
 
   try {
@@ -534,7 +535,7 @@ async function copyTextToClipboard(text: string) {
   }
 }
 
-function submitAiInsPrompt() {
+function submitPokePrompt() {
   const prompt = promptValue.trim()
   const continueRun = getContinueRun()
 
@@ -554,7 +555,7 @@ function submitAiInsPrompt() {
     queuePrompt(continueRun, prompt)
     setPromptValue('')
     panelStatus = ''
-    renderAiInsPanel()
+    renderPokePanel()
     return
   }
 
@@ -599,11 +600,11 @@ async function sendTurn(
   if (!continueRun) {
     saveStoredProviderId(provider.id)
   }
-  renderAiInsPanel()
+  renderPokePanel()
 
   const draftKey = getDraftKey()
   try {
-    const result = await runAiInsAgent(
+    const result = await runPokeAgent(
       submitTarget?.layer,
       submitTarget?.layers,
       provider.id,
@@ -633,7 +634,7 @@ async function sendTurn(
     panelStatus = error instanceof Error ? error.message : String(error)
   } finally {
     submitting = false
-    renderAiInsPanel()
+    renderPokePanel()
     // The send button was disabled mid-request and dropped focus to the page;
     // put it back so the next message (or Escape) works straight away.
     focusPanelTextarea()
@@ -646,7 +647,7 @@ async function sendTurn(
  * that came in while the page reloaded, or in another tab, still counts; runs
  * that finished before this feature first ran count as seen.
  */
-const seenRunsStorageKey = 'ai-ins-seen-runs'
+const seenRunsStorageKey = 'poke-seen-runs'
 type SeenRuns = { runs: Record<string, number>; since: number }
 
 function readSeenRuns(): SeenRuns {
@@ -681,7 +682,7 @@ function isRunUnread(run: AgentRun, seen: SeenRuns) {
 
 /** The conversation open in the panel is being looked at: its result is seen. */
 function markOpenConversationSeen() {
-  const run = aiInsPanel ? getSelectedRun() : undefined
+  const run = pokePanel ? getSelectedRun() : undefined
   if (!run) return
   const seen = readSeenRuns()
   if (!isRunUnread(run, seen)) return
@@ -699,11 +700,11 @@ function markOpenConversationSeen() {
  * history fetch so it does not flash the empty look before turning into a count.
  */
 function ensureDockButton() {
-  if (dockButton || !runsHydrated || aiInsPanel) {
+  if (dockButton || !runsHydrated || pokePanel) {
     return
   }
 
-  dockButton = createElement('button', 'ai-ins-dock') as HTMLButtonElement
+  dockButton = createElement('button', 'poke-dock') as HTMLButtonElement
   dockButton.type = 'button'
   dockButton.addEventListener('click', (event) => {
     if (suppressDockClick) {
@@ -713,13 +714,13 @@ function ensureDockButton() {
       return
     }
 
-    showAiInsPanel()
+    showPokePanel()
   })
-  // Same mark as the panel header: tile, diamond and spark, animated in CSS.
-  const mark = createElement('span', 'ai-ins-brand-mark')
+  // Same mark as the panel header: the selection-bracket poke glyph, animated in CSS.
+  const mark = createElement('span', 'poke-brand-mark')
   mark.setAttribute('aria-hidden', 'true')
-  mark.append(createElement('span', 'ai-ins-brand-diamond'), createElement('span', 'ai-ins-brand-spark'))
-  dockButton.append(mark, createElement('span', 'ai-ins-dock-badge'))
+  mark.append(createBrandGlyphElement())
+  dockButton.append(mark, createElement('span', 'poke-dock-badge'))
   dockButton.style.visibility = 'hidden'
   installDockDrag()
   document.body.append(dockButton)
@@ -729,7 +730,7 @@ function ensureDockButton() {
 }
 
 function updateDockButton() {
-  if (aiInsPanel) {
+  if (pokePanel) {
     dockButton?.remove()
     dockButton = undefined
     return
@@ -740,7 +741,7 @@ function updateDockButton() {
     return
   }
 
-  const badge = dockButton.querySelector('.ai-ins-dock-badge')
+  const badge = dockButton.querySelector('.poke-dock-badge')
   if (!badge) return
 
   const seen = readSeenRuns()
@@ -751,9 +752,9 @@ function updateDockButton() {
 
   // One badge, the most urgent state wins: needs you > working > new result.
   const badgeState = waitingCount ? 'waiting' : runningCount ? 'running' : unreadRuns.length ? (unreadFailed ? 'failed' : 'done') : ''
-  dockButton.classList.toggle('ai-ins-dock-running', runningCount + waitingCount > 0)
-  for (const state of ['waiting', 'done', 'failed']) dockButton.classList.toggle(`ai-ins-dock-${state}`, badgeState === state)
-  dockButton.classList.toggle('ai-ins-dock-has-badge', Boolean(badgeState))
+  dockButton.classList.toggle('poke-dock-running', runningCount + waitingCount > 0)
+  for (const state of ['waiting', 'done', 'failed']) dockButton.classList.toggle(`poke-dock-${state}`, badgeState === state)
+  dockButton.classList.toggle('poke-dock-has-badge', Boolean(badgeState))
   badge.textContent = String(
     badgeState === 'waiting' ? waitingCount : badgeState === 'running' ? runningCount : badgeState ? unreadRuns.length : '',
   )
@@ -776,19 +777,19 @@ function refreshRunList() {
     return
   }
 
-  renderAiInsPanel()
+  renderPokePanel()
   updateDockButton()
 }
 
 function refreshRunDetail() {
-  renderAiInsPanel()
+  renderPokePanel()
 }
 
 function refreshComposer() {
-  renderAiInsPanel()
+  renderPokePanel()
 }
 
-function showAiInsPanel(layer?: LayerTarget, layers?: LayerTarget[]) {
+function showPokePanel(layer?: LayerTarget, layers?: LayerTarget[]) {
   if (layer) {
     draftTarget = { layer, layers: layers || [layer] }
     panelStatus = ''
@@ -801,8 +802,8 @@ function showAiInsPanel(layer?: LayerTarget, layers?: LayerTarget[]) {
     continueTarget = undefined
   }
 
-  if (aiInsPanel) {
-    renderAiInsPanel()
+  if (pokePanel) {
+    renderPokePanel()
     return
   }
 
@@ -811,10 +812,10 @@ function showAiInsPanel(layer?: LayerTarget, layers?: LayerTarget[]) {
   providerValue = readStoredProviderId()
   proxyValue = readStoredProxy()
   proxyModeValue = getInitialProxyMode(proxyValue)
-  const overlay = createElement('div', 'ai-ins-dialog')
+  const overlay = createElement('div', 'poke-dialog')
   document.body.append(overlay)
 
-  aiInsPanel = overlay
+  pokePanel = overlay
   panelRefs = { status: statusRef }
   panelRoot = createRoot(overlay)
 
@@ -833,16 +834,16 @@ function showAiInsPanel(layer?: LayerTarget, layers?: LayerTarget[]) {
     const shouldClose = event.target === overlay && (backdropPointerDown || event.detail === 0)
     backdropPointerDown = false
     if (shouldClose) {
-      closeAiInsPanel()
+      closePokePanel()
     }
   })
   overlay.addEventListener('keydown', (event) => {
     if (event.key === 'Escape') {
-      closeAiInsPanel()
+      closePokePanel()
     }
   })
 
-  renderAiInsPanel()
+  renderPokePanel()
   updateDockButton()
   // A conversation restored from a previous page load has no transcript yet.
   const restored = getSelectedRun()
@@ -850,14 +851,14 @@ function showAiInsPanel(layer?: LayerTarget, layers?: LayerTarget[]) {
     void loadRunDetail(restored)
   }
   window.setTimeout(() => {
-    const textarea = overlay.querySelector('.ai-ins-textarea')
+    const textarea = overlay.querySelector('.poke-textarea')
     if (textarea instanceof HTMLTextAreaElement) {
       textarea.focus()
     }
   }, 0)
 }
 
-function unmountAiInsPanel() {
+function unmountPokePanel() {
   panelRoot?.unmount()
   panelRoot = undefined
   panelStatus = ''
@@ -867,14 +868,14 @@ function unmountAiInsPanel() {
 // the overlay's own listener only hears keys pressed inside the panel.
 document.addEventListener('keydown', (event) => {
   const active = document.activeElement
-  if (event.key === 'Escape' && aiInsPanel && (!active || active === document.body)) {
-    closeAiInsPanel()
+  if (event.key === 'Escape' && pokePanel && (!active || active === document.body)) {
+    closePokePanel()
   }
 })
 
 // Switching language re-renders everything the runtime draws outside React too.
 onLocaleChange(() => {
-  renderAiInsPanel()
+  renderPokePanel()
   updateDockButton()
 })
 
@@ -884,12 +885,12 @@ function notifyRun(run: AgentRun, kind: NotifyKind) {
   notifyRunEvent(kind, {
     body: turn?.prompt || run.sourceName || '',
     onClick: () => {
-      showAiInsPanel()
+      showPokePanel()
       openConversation(run.id)
     },
-    panelOpen: Boolean(aiInsPanel),
+    panelOpen: Boolean(pokePanel),
     provider: run.providerLabel,
-    tag: `ai-ins:${run.id}:${turn?.index ?? 0}:${kind}`,
+    tag: `poke:${run.id}:${turn?.index ?? 0}:${kind}`,
   })
 }
 
@@ -897,15 +898,15 @@ function notifyRun(run: AgentRun, kind: NotifyKind) {
 function applyUserSettings() {
   permissionModeValue = readPermissionMode()
   reloadLocalePreference()
-  if (!aiInsPanel) return
+  if (!pokePanel) return
   providerValue = readStoredProviderId()
   proxyValue = readStoredProxy()
   proxyModeValue = getInitialProxyMode(proxyValue)
   settingsVersion += 1
-  renderAiInsPanel()
+  renderPokePanel()
 }
 
-globalThis.aiInsPanelRuntime = {
+globalThis.pokePanelRuntime = {
   applyUserSettings,
   restoreLastConversation,
   flushQueuedPrompt,
@@ -914,7 +915,7 @@ globalThis.aiInsPanelRuntime = {
   refreshRunDetail,
   refreshRunList,
   restoreQueuedPrompts,
-  showAiInsPanel,
-  unmountAiInsPanel,
+  showPokePanel,
+  unmountPokePanel,
   updateDockButton,
 }

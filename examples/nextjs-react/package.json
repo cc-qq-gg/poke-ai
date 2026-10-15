@@ -1,5 +1,5 @@
 {
-  "name": "@ai-ins/playground-nextjs",
+  "name": "@poke-dev/playground-nextjs",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -10,7 +10,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@ai-ins/nextjs": "workspace:*",
+    "@poke-dev/nextjs": "workspace:*",
     "@types/node": "^22.15.3",
     "@types/react": "^19.1.0",
     "@types/react-dom": "^19.1.0",

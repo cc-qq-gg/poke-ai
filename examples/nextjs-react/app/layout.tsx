@@ -2,7 +2,7 @@ import './style.css'
 import type { ReactNode } from 'react'
 
 export const metadata = {
-  title: 'AI Ins Next.js Playground',
+  title: 'Poke Next.js Playground',
 }
 
 export default function RootLayout({ children }: { children: ReactNode }) {

@@ -3,14 +3,14 @@ import { transformAsync, type PluginObj } from '@babel/core'
 import { parse as parseSvelte } from 'svelte/compiler'
 import { ElementTypes, NodeTypes, parse as parseVueTemplate } from '@vue/compiler-dom'
 import { parse as parseVueSfc } from '@vue/compiler-sfc'
-import { createAiInsMiddlewares, ensureLaunchEditor, getAiInsClientCode, getAiInsClientWatchFiles, normalizeProxy } from '@ai-ins/core'
-import type { AiInsPluginOptions } from '@ai-ins/core'
+import { createPokeMiddlewares, ensureLaunchEditor, getPokeClientCode, getPokeClientWatchFiles, normalizeProxy } from '@poke-dev/core'
+import type { PokePluginOptions } from '@poke-dev/core'
 
-const clientModuleId = 'ai-ins/client'
+const clientModuleId = 'poke/client'
 const resolvedClientModuleId = `\0${clientModuleId}`
 const encodedClientModulePath = `/@id/__x00__${clientModuleId}`
-const sourceAttribute = 'data-ai-ins-source'
-const sourceRangeAttribute = 'data-ai-ins-source-range'
+const sourceAttribute = 'data-poke-source'
+const sourceRangeAttribute = 'data-poke-source-range'
 
 type VueSourceLocation = {
   offset: number
@@ -159,7 +159,7 @@ function hasSourceAttribute(attributes: unknown[]) {
 
 function createAgentSourcePlugin(fileName: string): PluginObj {
   return {
-    name: 'ai-ins-source-attribute',
+    name: 'poke-source-attribute',
     visitor: {
       JSXOpeningElement(path) {
         const { node } = path
@@ -419,10 +419,10 @@ function injectSvelteSourceAttributes(code: string, fileName: string) {
   }
 }
 
-export type { AiInsPluginOptions }
+export type { PokePluginOptions }
 
-export function aiIns(options: AiInsPluginOptions = {}): Plugin {
-  let aiInsRoot = ''
+export function poke(options: PokePluginOptions = {}): Plugin {
+  let pokeRoot = ''
   let base = '/'
   let clientBase = '/'
   let isServe = false
@@ -430,7 +430,7 @@ export function aiIns(options: AiInsPluginOptions = {}): Plugin {
   const pluginProxy = normalizeProxy(options.codex?.proxy ?? options.proxy)
 
   return {
-    name: 'ai-ins:vite',
+    name: 'poke:vite',
     enforce: 'pre',
     apply: 'serve',
     configResolved(config) {
@@ -438,18 +438,18 @@ export function aiIns(options: AiInsPluginOptions = {}): Plugin {
       clientBase = getClientBase(config.base, config.server.origin)
       isServe = config.command === 'serve'
       root = config.root
-      aiInsRoot = options.root || config.root
+      pokeRoot = options.root || config.root
       ensureLaunchEditor(config.command)
     },
     configureServer(server: ViteDevServer) {
-      aiInsRoot = options.root || server.config.root
-      for (const route of createAiInsMiddlewares(aiInsRoot, options)) {
+      pokeRoot = options.root || server.config.root
+      for (const route of createPokeMiddlewares(pokeRoot, options)) {
         for (const path of getMiddlewarePaths(clientBase, route.path)) {
           server.middlewares.use(path, route.middleware)
         }
       }
 
-      const clientWatchFiles = new Set<string>(getAiInsClientWatchFiles())
+      const clientWatchFiles = new Set<string>(getPokeClientWatchFiles())
       server.watcher.add([...clientWatchFiles])
       server.watcher.on('change', (fileName) => {
         if (!clientWatchFiles.has(fileName)) {
@@ -465,7 +465,7 @@ export function aiIns(options: AiInsPluginOptions = {}): Plugin {
     },
     load(id) {
       if (id !== resolvedClientModuleId || !isServe) return null
-      return getAiInsClientCode({ base: clientBase, defaultProvider: options.agents?.defaultProvider, options, pluginProxy, root: aiInsRoot || root })
+      return getPokeClientCode({ base: clientBase, defaultProvider: options.agents?.defaultProvider, options, pluginProxy, root: pokeRoot || root })
     },
     resolveId(source) {
       if (source === clientModuleId) return resolvedClientModuleId
@@ -494,4 +494,4 @@ export function aiIns(options: AiInsPluginOptions = {}): Plugin {
   }
 }
 
-export default aiIns
+export default poke

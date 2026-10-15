@@ -262,7 +262,7 @@ export const fr: MessageCatalog = {
   'settings.permissionFixed': 'Les autorisations de {provider} sont définies par ses propres options de lancement ; ce réglage ne s’applique pas à lui.',
   'turn.fullAccess': 'Accès complet',
   'dock.waitingPermission': { one: '{count} conversation en attente d’approbation', other: '{count} conversations en attente d’approbation' },
-  'dock.open': 'Ouvrir AI Ins',
+  'dock.open': 'Ouvrir Poke',
   'error.permissionGone': 'Cette demande d’autorisation n’est plus valide (l’Agent a peut-être terminé).',
   'error.diffGone': 'Le diff de ce fichier n’est plus disponible',
 
@@ -277,7 +277,7 @@ export const fr: MessageCatalog = {
   // Dock button
   'dock.running': { one: '{count} conversation en cours', other: '{count} conversations en cours' },
   'dock.unread': { one: '{count} conversation a un nouveau résultat', other: '{count} conversations ont un nouveau résultat' },
-  'dock.total': { one: '{count} conversation AI Ins', other: '{count} conversations AI Ins' },
+  'dock.total': { one: '{count} conversation Poke', other: '{count} conversations Poke' },
 
   // Live activity and reasoning
   'thinking.live': 'Réflexion…',

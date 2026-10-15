@@ -20,7 +20,7 @@ const changes = async (run: () => void) => {
 }
 
 beforeAll(() => {
-  repo = mkdtempSync(join(tmpdir(), 'ai-ins-changes-'))
+  repo = mkdtempSync(join(tmpdir(), 'poke-changes-'))
   root = join(repo, 'app')
   mkdirSync(join(root, 'src'), { recursive: true })
   git('init -q')
@@ -45,8 +45,8 @@ describe('workspace change tracking', () => {
         unlinkSync(join(root, 'src/c.ts'))
         write('app/src/new.ts', 'new\n')
         write('outside.ts', '// outside the root\n')
-        mkdirSync(join(root, '.ai-ins/runs'), { recursive: true })
-        write('app/.ai-ins/runs/x.json', '{}')
+        mkdirSync(join(root, '.poke/runs'), { recursive: true })
+        write('app/.poke/runs/x.json', '{}')
       }),
     ).toEqual(['modified src/a.ts', 'modified src/b.ts', 'deleted src/c.ts', 'added src/new.ts'])
   })
@@ -62,7 +62,7 @@ describe('workspace change tracking', () => {
   })
 
   it('returns undefined outside a git work tree', async () => {
-    const plain = mkdtempSync(join(tmpdir(), 'ai-ins-plain-'))
+    const plain = mkdtempSync(join(tmpdir(), 'poke-plain-'))
     expect(await takeWorkspaceSnapshot(plain)).toBeUndefined()
     rmSync(plain, { force: true, recursive: true })
   })

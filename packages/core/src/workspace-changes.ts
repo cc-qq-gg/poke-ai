@@ -4,7 +4,7 @@ import { existsSync } from 'fs'
 import { mkdtemp, readFile, realpath, rm, stat, writeFile } from 'fs/promises'
 import { tmpdir } from 'os'
 import { join, relative, sep } from 'path'
-import type { AiInsChangedFile } from './types'
+import type { PokeChangedFile } from './types'
 
 // Bigger files are compared by size + mtime instead of content.
 const maxHashedFileBytes = 4 * 1024 * 1024
@@ -73,10 +73,10 @@ async function readGitStatus(root: string) {
   const gitRoot = (await runGit(['rev-parse', '--show-toplevel'], root)).trim()
   const output = await runGit(['status', '--porcelain=v1', '-z', '--untracked-files=all', '--', '.'], root)
   // git reports symlink-resolved paths (macOS /tmp is /private/tmp); map them
-  // back under `root` so they match the rest of AI Ins and display relative.
+  // back under `root` so they match the rest of Poke and display relative.
   const realRoot = await realpath(root).catch(() => root)
-  // AI Ins writes its own logs and history under the root; never report them.
-  const ownDirectory = join(root, '.ai-ins')
+  // Poke writes its own logs and history under the root; never report them.
+  const ownDirectory = join(root, '.poke')
   const tokens = output.split('\0')
   const entries: Array<[string, string]> = []
 
@@ -118,7 +118,7 @@ export async function takeWorkspaceSnapshot(root: string): Promise<WorkspaceSnap
   }
 }
 
-function getChangeStatus(code: string): AiInsChangedFile['status'] {
+function getChangeStatus(code: string): PokeChangedFile['status'] {
   if (code === '??' || code.includes('A')) return 'added'
   if (code.includes('D')) return 'deleted'
   return 'modified'
@@ -129,8 +129,8 @@ function getChangeStatus(code: string): AiInsChangedFile['status'] {
  * before and clean after was reverted or removed by the turn, which counts too.
  * Runs that overlap in the same root cannot be told apart and share credit.
  */
-export function diffWorkspaceSnapshots(before: WorkspaceSnapshot, after: WorkspaceSnapshot): AiInsChangedFile[] {
-  const changed: AiInsChangedFile[] = []
+export function diffWorkspaceSnapshots(before: WorkspaceSnapshot, after: WorkspaceSnapshot): PokeChangedFile[] {
+  const changed: PokeChangedFile[] = []
 
   for (const [path, value] of after) {
     if (before.get(path) !== value) {
@@ -208,7 +208,7 @@ async function readBaselineFile(root: string, baseline: WorkspaceBaseline, fileN
   return runGitBuffer(['show', `${baseline.commit}:./${path}`], root).catch(() => undefined)
 }
 
-type FilePatch = Pick<AiInsChangedFile, 'additions' | 'binary' | 'deletions' | 'patch' | 'truncated'>
+type FilePatch = Pick<PokeChangedFile, 'additions' | 'binary' | 'deletions' | 'patch' | 'truncated'>
 
 /** Unified diff between two blobs, with git's file headers dropped (the file list names the file). */
 async function diffBuffers(before: Buffer | undefined, afterFileName: string | undefined, scratch: string, index: number): Promise<FilePatch> {
@@ -254,15 +254,15 @@ async function diffBuffers(before: Buffer | undefined, afterFileName: string | u
  * baseline with what is on disk now. Files past the caps keep their counts
  * where possible and simply have no patch.
  */
-export async function addWorkspacePatches(root: string, baseline: WorkspaceBaseline | undefined, files: AiInsChangedFile[]) {
+export async function addWorkspacePatches(root: string, baseline: WorkspaceBaseline | undefined, files: PokeChangedFile[]) {
   if (!baseline || !files.length) {
     return files
   }
 
-  const scratch = await mkdtemp(join(tmpdir(), 'ai-ins-diff-'))
+  const scratch = await mkdtemp(join(tmpdir(), 'poke-diff-'))
   let budget = maxTurnPatchBytes
   try {
-    const result: AiInsChangedFile[] = []
+    const result: PokeChangedFile[] = []
     for (const [index, file] of files.entries()) {
       if (index >= maxDiffedFiles) {
         result.push(file)
@@ -302,7 +302,7 @@ export async function addWorkspacePatches(root: string, baseline: WorkspaceBasel
  * what a commit would contain) or not (work tree vs index). A file edited
  * again after `git add` shows up in both.
  */
-export type WorkspaceChange = Pick<AiInsChangedFile, 'additions' | 'binary' | 'deletions' | 'path' | 'status'> & { staged: boolean }
+export type WorkspaceChange = Pick<PokeChangedFile, 'additions' | 'binary' | 'deletions' | 'path' | 'status'> & { staged: boolean }
 
 async function countTextLines(fileName: string) {
   try {
@@ -387,7 +387,7 @@ function readIndexFile(root: string, fileName: string) {
 /** Patch of one file: staged is HEAD → index, unstaged is index → work tree. */
 export async function getWorkspaceFilePatch(root: string, fileName: string, staged: boolean) {
   const head = (await runGit(['rev-parse', '--verify', '-q', 'HEAD'], root).catch(() => '')).trim()
-  const scratch = await mkdtemp(join(tmpdir(), 'ai-ins-diff-'))
+  const scratch = await mkdtemp(join(tmpdir(), 'poke-diff-'))
   try {
     if (staged) {
       const before = head ? await readBaselineFile(root, { commit: head, untracked: new Map() }, fileName) : undefined

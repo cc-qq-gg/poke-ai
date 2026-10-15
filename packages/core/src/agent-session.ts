@@ -1,9 +1,9 @@
-import type { AiInsAgentSessionInput, ResolvedAiInsAgentSession } from './types'
+import type { PokeAgentSessionInput, ResolvedPokeAgentSession } from './types'
 
 const sessionIdPlaceholder = '{sessionId}'
 const maxSessionIdScanDepth = 4
 
-const unsupportedSession: ResolvedAiInsAgentSession = {
+const unsupportedSession: ResolvedPokeAgentSession = {
   assignArgs: [],
   mode: 'none',
   resumeArgs: [],
@@ -11,16 +11,16 @@ const unsupportedSession: ResolvedAiInsAgentSession = {
   sessionIdKeys: [],
 }
 
-export function getUnsupportedAgentSession(): ResolvedAiInsAgentSession {
+export function getUnsupportedAgentSession(): ResolvedPokeAgentSession {
   return { ...unsupportedSession }
 }
 
 export function resolveAgentSession(
-  input: AiInsAgentSessionInput | undefined,
+  input: PokeAgentSessionInput | undefined,
   fallbackInput: 'argument' | 'stdin',
-  base?: ResolvedAiInsAgentSession,
-): ResolvedAiInsAgentSession {
-  const merged: ResolvedAiInsAgentSession = {
+  base?: ResolvedPokeAgentSession,
+): ResolvedPokeAgentSession {
+  const merged: ResolvedPokeAgentSession = {
     assignArgs: input?.assignArgs ?? base?.assignArgs ?? [],
     mode: input?.mode ?? base?.mode ?? 'none',
     resumeArgs: input?.resumeArgs ?? base?.resumeArgs ?? [],

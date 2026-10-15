@@ -1,7 +1,7 @@
 const style = document.createElement('style')
 style.setAttribute('type', 'text/css')
-style.setAttribute('data-vite-dev-id', 'ai-ins')
-style.textContent = __AI_INS_CLIENT_STYLE__.replaceAll('__AI_INS_TARGET_ATTRIBUTE__', targetAttribute)
+style.setAttribute('data-vite-dev-id', 'poke')
+style.textContent = __POKE_CLIENT_STYLE__.replaceAll('__POKE_TARGET_ATTRIBUTE__', targetAttribute)
 document.head.appendChild(style)
 
 function createElement(tag, className, text) {
@@ -60,7 +60,7 @@ function setIconButtonIcon(button, label, paths) {
 function createLoadingSpinner() {
   const spinner = createSvgElement('svg', {
     'aria-hidden': 'true',
-    class: 'ai-ins-output-state-spinner',
+    class: 'poke-output-state-spinner',
     fill: 'none',
     viewBox: '0 0 24 24',
   })

@@ -1,8 +1,8 @@
 import { parse } from '@astrojs/compiler'
 import type { HmrContext, Plugin } from 'vite'
 
-const sourceAttribute = 'data-ai-ins-source'
-const sourceRangeAttribute = 'data-ai-ins-source-range'
+const sourceAttribute = 'data-poke-source'
+const sourceRangeAttribute = 'data-poke-source-range'
 
 // 这些元素加属性会改变 Astro 的处理语义（如带属性的 <script> 会变成 is:inline），
 // 或者本身不渲染可点选的内容，统一跳过。
@@ -136,7 +136,7 @@ export async function injectAstroSourceAttributes(code: string, fileName: string
 // 这里用 order: 'pre' 抢在它编译 .astro 之前注入定位属性。
 export function astroSourcePlugin(): Plugin {
   return {
-    name: 'ai-ins:astro-source',
+    name: 'poke:astro-source',
     enforce: 'pre',
     apply: 'serve',
     handleHotUpdate: {

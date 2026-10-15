@@ -20,11 +20,11 @@ type PackageJson = {
   packageManager?: string
 }
 
-const aiInsPackages: Record<Bundler, string> = {
-  astro: '@ai-ins/astro',
-  nextjs: '@ai-ins/nextjs',
-  vite: '@ai-ins/vite',
-  webpack: '@ai-ins/webpack',
+const pokePackages: Record<Bundler, string> = {
+  astro: '@poke-dev/astro',
+  nextjs: '@poke-dev/nextjs',
+  vite: '@poke-dev/vite',
+  webpack: '@poke-dev/webpack',
 }
 
 const bundlers: Bundler[] = ['astro', 'nextjs', 'vite', 'webpack']
@@ -37,41 +37,41 @@ const viteConfigPattern = /^vite(?:\.[^.]+)*\.config(?:\.[^.]+)*\.[cm]?[jt]s$/u
 const webpackConfigPattern = /^webpack(?:\.[^.]+)*(?:\.config(?:\.[^.]+)*|\.(?:dev|prod|common|base))(?:\.[^.]+)*\.[cm]?[jt]s$/u
 
 function printHelp() {
-  console.log(`ai-ins
+  console.log(`poke
 
 Usage:
-  ai-ins [--bundler astro|nextjs|vite|webpack] [--config <path>] [--no-install] [--force]
-  ai-ins init [--bundler astro|nextjs|vite|webpack] [--config <path>] [--no-install] [--force]
+  poke [--bundler astro|nextjs|vite|webpack] [--config <path>] [--no-install] [--force]
+  poke init [--bundler astro|nextjs|vite|webpack] [--config <path>] [--no-install] [--force]
 
 Examples:
-  npx ai-ins
-  npx ai-ins --bundler astro
-  npx ai-ins --bundler nextjs
-  npx ai-ins --bundler vite
-  npx ai-ins --bundler vite --config apps/web/vite.config.ts
-  npx ai-ins --force
-  npx ai-ins init
-  npx ai-ins init --bundler vite
+  npx poke
+  npx poke --bundler astro
+  npx poke --bundler nextjs
+  npx poke --bundler vite
+  npx poke --bundler vite --config apps/web/vite.config.ts
+  npx poke --force
+  npx poke init
+  npx poke init --bundler vite
 `)
 }
 
 function printInitHelp() {
-  console.log(`ai-ins init
+  console.log(`poke init
 
 Usage:
-  ai-ins [init] [--bundler astro|nextjs|vite|webpack] [--config <path>] [--no-install] [--force]
+  poke [init] [--bundler astro|nextjs|vite|webpack] [--config <path>] [--no-install] [--force]
 
 Options:
   --bundler astro|nextjs|vite|webpack  Specify the bundler instead of auto-detecting it.
   --config <path>                      Update a specific bundler config file instead of auto-picking one.
   --no-install                         Update config only, without installing dependencies.
-  --force                              Install the latest matching @ai-ins/* package even if it is already installed.
+  --force                              Install the latest matching @poke-dev/* package even if it is already installed.
   --cwd <path>                         Run init in a different project directory.
 `)
 }
 
 function fail(message: string): never {
-  console.error(`ai-ins: ${message}`)
+  console.error(`poke: ${message}`)
   process.exit(1)
 }
 
@@ -532,18 +532,18 @@ function patchViteConfig(root: string, requestedConfig?: string) {
   if (!existsSync(configFile)) {
     writeFileSync(
       configFile,
-      `import aiIns from '@ai-ins/vite'\nimport { defineConfig } from 'vite'\n\nexport default defineConfig({\n  plugins: [aiIns()],\n})\n`,
+      `import poke from '@poke-dev/vite'\nimport { defineConfig } from 'vite'\n\nexport default defineConfig({\n  plugins: [poke()],\n})\n`,
     )
     return configFile
   }
 
   const code = readFileSync(configFile, 'utf-8')
-  if (code.includes('@ai-ins/vite')) {
+  if (code.includes('@poke-dev/vite')) {
     return configFile
   }
 
-  const importName = uniqueIdentifier(code, 'aiIns')
-  const withImport = insertImport(code, `import ${importName} from '@ai-ins/vite'`)
+  const importName = uniqueIdentifier(code, 'poke')
+  const withImport = insertImport(code, `import ${importName} from '@poke-dev/vite'`)
   const patched = patchPluginConfig(withImport, `${importName}()`, 'start')
   if (!patched) {
     fail(`could not update ${configFile}. Add ${importName}() to the Vite plugins array manually.`)
@@ -558,18 +558,18 @@ function patchAstroConfig(root: string, requestedConfig?: string) {
   if (!existsSync(configFile)) {
     writeFileSync(
       configFile,
-      `import aiIns from '@ai-ins/astro'\nimport { defineConfig } from 'astro/config'\n\nexport default defineConfig({\n  integrations: [aiIns()],\n})\n`,
+      `import poke from '@poke-dev/astro'\nimport { defineConfig } from 'astro/config'\n\nexport default defineConfig({\n  integrations: [poke()],\n})\n`,
     )
     return configFile
   }
 
   const code = readFileSync(configFile, 'utf-8')
-  if (code.includes('@ai-ins/astro')) {
+  if (code.includes('@poke-dev/astro')) {
     return configFile
   }
 
-  const importName = uniqueIdentifier(code, 'aiIns')
-  const withImport = insertImport(code, `import ${importName} from '@ai-ins/astro'`)
+  const importName = uniqueIdentifier(code, 'poke')
+  const withImport = insertImport(code, `import ${importName} from '@poke-dev/astro'`)
   const patched = patchArrayConfig(withImport, 'integrations', `${importName}()`)
   if (!patched) {
     fail(`could not update ${configFile}. Add ${importName}() to the Astro integrations array manually.`)
@@ -584,25 +584,25 @@ function patchWebpackConfig(root: string, requestedConfig?: string) {
   if (!existsSync(configFile)) {
     writeFileSync(
       configFile,
-      `const { AiInsWebpackPlugin } = require('@ai-ins/webpack')\n\nmodule.exports = {\n  devServer: {},\n  plugins: [new AiInsWebpackPlugin()],\n}\n`,
+      `const { PokeWebpackPlugin } = require('@poke-dev/webpack')\n\nmodule.exports = {\n  devServer: {},\n  plugins: [new PokeWebpackPlugin()],\n}\n`,
     )
     return configFile
   }
 
   const code = readFileSync(configFile, 'utf-8')
-  if (code.includes('@ai-ins/webpack')) {
+  if (code.includes('@poke-dev/webpack')) {
     return configFile
   }
 
-  const className = uniqueIdentifier(code, 'AiInsWebpackPlugin')
+  const className = uniqueIdentifier(code, 'PokeWebpackPlugin')
   const isCommonJs = configFile.endsWith('.cjs') || code.includes('module.exports') || code.includes('require(')
   const statement = isCommonJs
-    ? className === 'AiInsWebpackPlugin'
-      ? `const { AiInsWebpackPlugin } = require('@ai-ins/webpack')`
-      : `const { AiInsWebpackPlugin: ${className} } = require('@ai-ins/webpack')`
-    : className === 'AiInsWebpackPlugin'
-      ? `import { AiInsWebpackPlugin } from '@ai-ins/webpack'`
-      : `import { AiInsWebpackPlugin as ${className} } from '@ai-ins/webpack'`
+    ? className === 'PokeWebpackPlugin'
+      ? `const { PokeWebpackPlugin } = require('@poke-dev/webpack')`
+      : `const { PokeWebpackPlugin: ${className} } = require('@poke-dev/webpack')`
+    : className === 'PokeWebpackPlugin'
+      ? `import { PokeWebpackPlugin } from '@poke-dev/webpack'`
+      : `import { PokeWebpackPlugin as ${className} } from '@poke-dev/webpack'`
   const withImport = isCommonJs ? insertRequire(code, statement) : insertImport(code, statement)
   const patched = patchPluginConfig(withImport, `new ${className}()`)
   if (!patched) {
@@ -618,25 +618,25 @@ function patchNextConfig(root: string, requestedConfig?: string) {
   if (!existsSync(configFile)) {
     writeFileSync(
       configFile,
-      `import { withAiIns } from '@ai-ins/nextjs'\nimport type { NextConfig } from 'next'\n\nconst nextConfig: NextConfig = {}\n\nexport default withAiIns(nextConfig)\n`,
+      `import { withPoke } from '@poke-dev/nextjs'\nimport type { NextConfig } from 'next'\n\nconst nextConfig: NextConfig = {}\n\nexport default withPoke(nextConfig)\n`,
     )
     return configFile
   }
 
   const code = readFileSync(configFile, 'utf-8')
-  if (code.includes('@ai-ins/nextjs')) {
+  if (code.includes('@poke-dev/nextjs')) {
     return configFile
   }
 
-  const helperName = uniqueIdentifier(code, 'withAiIns')
+  const helperName = uniqueIdentifier(code, 'withPoke')
   const isCommonJs = configFile.endsWith('.cjs') || code.includes('module.exports') || code.includes('require(')
   const statement = isCommonJs
-    ? helperName === 'withAiIns'
-      ? `const { withAiIns } = require('@ai-ins/nextjs')`
-      : `const { withAiIns: ${helperName} } = require('@ai-ins/nextjs')`
-    : helperName === 'withAiIns'
-      ? `import { withAiIns } from '@ai-ins/nextjs'`
-      : `import { withAiIns as ${helperName} } from '@ai-ins/nextjs'`
+    ? helperName === 'withPoke'
+      ? `const { withPoke } = require('@poke-dev/nextjs')`
+      : `const { withPoke: ${helperName} } = require('@poke-dev/nextjs')`
+    : helperName === 'withPoke'
+      ? `import { withPoke } from '@poke-dev/nextjs'`
+      : `import { withPoke as ${helperName} } from '@poke-dev/nextjs'`
   const withImport = isCommonJs ? insertRequire(code, statement) : insertImport(code, statement)
 
   const commonJsObjectMatch = /module\.exports\s*=\s*\{/u.exec(withImport)
@@ -691,16 +691,16 @@ function patchNextConfig(root: string, requestedConfig?: string) {
 function patchNextClientInstrumentation(root: string) {
   const configFile = findExistingFile(root, nextClientInstrumentationFiles) ?? join(root, 'instrumentation-client.ts')
   if (!existsSync(configFile)) {
-    writeFileSync(configFile, `import '@ai-ins/nextjs/client'\n`)
+    writeFileSync(configFile, `import '@poke-dev/nextjs/client'\n`)
     return configFile
   }
 
   const code = readFileSync(configFile, 'utf-8')
-  if (code.includes('@ai-ins/nextjs/client')) {
+  if (code.includes('@poke-dev/nextjs/client')) {
     return configFile
   }
 
-  writeFileSync(configFile, insertImport(code, `import '@ai-ins/nextjs/client'`))
+  writeFileSync(configFile, insertImport(code, `import '@poke-dev/nextjs/client'`))
   return configFile
 }
 
@@ -718,9 +718,9 @@ function runInit(args: string[]) {
 
   const packageJson = readJsonFile<PackageJson>(packageJsonPath)
   const bundler = detectBundler(options.cwd, packageJson, options.bundler, options.config)
-  const packageName = aiInsPackages[bundler]
+  const packageName = pokePackages[bundler]
 
-  console.log(`AI Ins init (${bundler})`)
+  console.log(`Poke init (${bundler})`)
   if (options.install) {
     installPackage(options.cwd, packageJson, packageName, options.forceInstall)
   }
@@ -737,7 +737,7 @@ function runInit(args: string[]) {
   if (clientFile) {
     console.log(`- Updated ${clientFile}`)
   }
-  console.log('Done. Restart your dev server to load AI Ins.')
+  console.log('Done. Restart your dev server to load Poke.')
 }
 
 function main(args: string[]) {

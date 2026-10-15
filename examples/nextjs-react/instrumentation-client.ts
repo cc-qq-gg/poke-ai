@@ -1,1 +1,1 @@
-import '@ai-ins/nextjs/client'
+import '@poke-dev/nextjs/client'

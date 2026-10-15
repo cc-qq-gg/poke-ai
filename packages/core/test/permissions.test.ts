@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import { applyPermissionArgs, getSupportedPermissionModes, parsePermissionMode, resolvePermissionMode } from '../src/permissions'
-import type { AiInsAgentPermissionsInput, ResolvedAiInsAgentProvider } from '../src/types'
+import type { PokeAgentPermissionsInput, ResolvedPokeAgentProvider } from '../src/types'
 
-function provider(permissions?: AiInsAgentPermissionsInput) {
-  return { permissions } as ResolvedAiInsAgentProvider
+function provider(permissions?: PokeAgentPermissionsInput) {
+  return { permissions } as ResolvedPokeAgentProvider
 }
 
 describe('resolvePermissionMode', () => {

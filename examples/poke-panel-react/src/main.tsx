@@ -5,7 +5,7 @@ import type { AgentProvider, AgentRun, LayerTarget, ProxyMode } from '../../../p
 import '../../../packages/core/src/client/style.css'
 import './style.css'
 
-type AiInsConfig = {
+type PokeConfig = {
   defaultProvider: string
   defaultProxy: string
   providers: AgentProvider[]
@@ -18,9 +18,9 @@ type DraftTarget = {
 }
 
 const base = '/'
-const proxyStorageKey = 'ai-ins-proxy'
-const proxyModeStorageKey = 'ai-ins-proxy-mode'
-const providerStorageKey = 'ai-ins-provider'
+const proxyStorageKey = 'poke-proxy'
+const proxyModeStorageKey = 'poke-proxy-mode'
+const providerStorageKey = 'poke-provider'
 
 async function readJson<T>(url: string, options?: RequestInit): Promise<T> {
   const response = await fetch(url, options)
@@ -36,7 +36,7 @@ async function openInEditor(layerPath: string) {
   await readJson(`${base}__open-in-editor?file=${encodeURIComponent(layerPath)}`)
 }
 
-async function runAiInsAgent(
+async function runPokeAgent(
   layer: LayerTarget,
   layers: LayerTarget[],
   providerId: string,
@@ -44,7 +44,7 @@ async function runAiInsAgent(
   proxyMode: ProxyMode,
   proxy: string,
 ) {
-  return readJson<{ agentPrompt?: string; logPath?: string; providerLabel?: string; runId: string }>(`${base}__ai-ins-agent`, {
+  return readJson<{ agentPrompt?: string; logPath?: string; providerLabel?: string; runId: string }>(`${base}__poke-agent`, {
     body: JSON.stringify({
       file: layer.path,
       layers,
@@ -61,11 +61,11 @@ async function runAiInsAgent(
 }
 
 async function loadAgentRuns() {
-  return readJson<{ runs: Array<Partial<AgentRun> & { id: string }> }>(`${base}__ai-ins-agent/runs`)
+  return readJson<{ runs: Array<Partial<AgentRun> & { id: string }> }>(`${base}__poke-agent/runs`)
 }
 
 async function deleteAgentRun(runId: string) {
-  await readJson(`${base}__ai-ins-agent/runs?id=${encodeURIComponent(runId)}`, { method: 'DELETE' })
+  await readJson(`${base}__poke-agent/runs?id=${encodeURIComponent(runId)}`, { method: 'DELETE' })
 }
 
 function readStoredValue(key: string) {
@@ -108,7 +108,7 @@ function getInitialProxyMode(storedProxy: string, defaultProxy: string): ProxyMo
 const maxPanelOutputLength = 70000
 const panelOutputHeadLength = 12000
 const panelOutputTailLength = 52000
-const panelOutputCompactionNotice = '\n\n[ai-ins] 面板输出过长，已保留开头和最新部分；完整输出请打开上方日志文件。\n\n'
+const panelOutputCompactionNotice = '\n\n[poke] 面板输出过长，已保留开头和最新部分；完整输出请打开上方日志文件。\n\n'
 
 function slicePanelOutputHead(output: string) {
   const newlineIndex = output.lastIndexOf('\n', panelOutputHeadLength)
@@ -141,27 +141,27 @@ function getLayersForElement(element: HTMLElement) {
   const layers: LayerTarget[] = []
 
   while (instance) {
-    const path = instance.getAttribute('data-ai-ins-source')
+    const path = instance.getAttribute('data-poke-source')
     if (path) {
       layers.push({
         name: getElementName(instance),
         path,
-        range: instance.getAttribute('data-ai-ins-source-range') || undefined,
+        range: instance.getAttribute('data-poke-source-range') || undefined,
       })
     }
 
-    instance = instance.parentElement?.closest('[data-ai-ins-source]') || null
+    instance = instance.parentElement?.closest('[data-poke-source]') || null
   }
 
   return layers
 }
 
 function getSourceElement(element: HTMLElement) {
-  return element.closest('[data-ai-ins-source]')
+  return element.closest('[data-poke-source]')
 }
 
 function getPanelTarget(container: HTMLElement | null): DraftTarget | undefined {
-  const panel = container?.querySelector('.ai-ins-panel')
+  const panel = container?.querySelector('.poke-panel')
   if (!(panel instanceof HTMLElement)) {
     return undefined
   }
@@ -213,7 +213,7 @@ function App() {
   const shellRef = useRef<HTMLDivElement>(null)
   const previewTargetRef = useRef<HTMLElement | null>(null)
   const eventSources = useRef(new Map<string, EventSource>())
-  const [config, setConfig] = useState<AiInsConfig>({
+  const [config, setConfig] = useState<PokeConfig>({
     defaultProvider: 'codex',
     defaultProxy: '',
     providers: [{ enabled: true, id: 'codex', label: 'Codex' }],
@@ -226,7 +226,7 @@ function App() {
   const [proxyMode, setProxyMode] = useState<ProxyMode>(() => getInitialProxyMode(readStoredValue(proxyStorageKey), ''))
   const [runs, setRuns] = useState<AgentRun[]>([])
   const [selectedRunId, setSelectedRunId] = useState<string>()
-  const [status, setStatus] = useState('正在连接真实 AI Ins dev server...')
+  const [status, setStatus] = useState('正在连接真实 Poke dev server...')
   const [submitting, setSubmitting] = useState(false)
 
   function getDisplayPath(path: string) {
@@ -238,7 +238,7 @@ function App() {
       return
     }
 
-    const eventSource = new window.EventSource(`${base}__ai-ins-agent/events?id=${encodeURIComponent(run.id)}`)
+    const eventSource = new window.EventSource(`${base}__poke-agent/events?id=${encodeURIComponent(run.id)}`)
     eventSources.current.set(run.id, eventSource)
 
     eventSource.onmessage = (event) => {
@@ -278,7 +278,7 @@ function App() {
             return {
               ...currentRun,
               completed: true,
-              output: compactOutputForPanel(`${currentRun.output}\n[ai-ins] ${payload.message || `${currentRun.providerLabel} 启动失败`}\n`),
+              output: compactOutputForPanel(`${currentRun.output}\n[poke] ${payload.message || `${currentRun.providerLabel} 启动失败`}\n`),
               status: 'failed',
               statusMessage: payload.message || `${currentRun.providerLabel} 启动失败`,
             }
@@ -316,7 +316,7 @@ function App() {
 
     async function hydrate() {
       try {
-        const nextConfig = await readJson<AiInsConfig>(`${base}__ai-ins-config`)
+        const nextConfig = await readJson<PokeConfig>(`${base}__poke-config`)
         if (!mounted) return
 
         setConfig(nextConfig)
@@ -334,7 +334,7 @@ function App() {
         setRuns(nextRuns)
         setSelectedRunId((current) => current || nextRuns[0]?.id)
         nextRuns.forEach(subscribeRun)
-        setStatus(nextRuns.length ? '已连接真实 AI Ins 任务流。' : '已连接真实 AI Ins dev server，可以直接提交修改请求。')
+        setStatus(nextRuns.length ? '已连接真实 Poke 任务流。' : '已连接真实 Poke dev server，可以直接提交修改请求。')
       } catch (error) {
         setStatus(error instanceof Error ? error.message : String(error))
       }
@@ -360,7 +360,7 @@ function App() {
 
   function clearPreviewTarget() {
     if (previewTargetRef.current) {
-      delete previewTargetRef.current.dataset.aiInsTarget
+      delete previewTargetRef.current.dataset.pokeTarget
       previewTargetRef.current = null
     }
   }
@@ -375,7 +375,7 @@ function App() {
     if (previewTargetRef.current !== sourceElement) {
       clearPreviewTarget()
       previewTargetRef.current = sourceElement
-      sourceElement.dataset.aiInsTarget = 'true'
+      sourceElement.dataset.pokeTarget = 'true'
     }
 
     return sourceElement
@@ -429,7 +429,7 @@ function App() {
     saveStoredValue(providerStorageKey, provider.id)
 
     try {
-      const result = await runAiInsAgent(draftTarget.layer, draftTarget.layers, provider.id, rawPrompt, proxyMode, customProxy)
+      const result = await runPokeAgent(draftTarget.layer, draftTarget.layers, provider.id, rawPrompt, proxyMode, customProxy)
       const run = {
         agentPrompt: result.agentPrompt || '',
         completed: false,
@@ -461,7 +461,7 @@ function App() {
 
   return (
     <div
-      className="panel-playground-shell ai-ins-dialog"
+      className="panel-playground-shell poke-dialog"
       onClickCapture={(event) => {
         if (!event.altKey || !(event.target instanceof HTMLElement)) {
           return

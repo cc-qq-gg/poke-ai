@@ -2,13 +2,13 @@ import { createAgentJsonFormatter } from './agent-output'
 import { readSessionIdFromEvent } from './agent-session'
 import { getAgentEnv } from './proxy'
 import { cancelPendingPermissions } from './permissions'
-import { appendAiInsEvent, setAiInsRunSessionId } from './run-store'
+import { appendPokeEvent, setPokeRunSessionId } from './run-store'
 import { shouldUseShellForCommand } from './editor'
 import { addWorkspacePatches, diffWorkspaceSnapshots, takeWorkspaceBaseline, takeWorkspaceSnapshot } from './workspace-changes'
 import { spawn } from 'child_process'
 import { createWriteStream } from 'fs'
 import { StringDecoder } from 'string_decoder'
-import type { AiInsRun, ResolvedAiInsAgentProvider } from './types'
+import type { PokeRun, ResolvedPokeAgentProvider } from './types'
 
 const heartbeatIntervalMs = 5000
 
@@ -18,12 +18,12 @@ export type AgentTurnOptions = {
   input: 'argument' | 'stdin'
   logPath: string
   prompt: string
-  provider: ResolvedAiInsAgentProvider
+  provider: ResolvedPokeAgentProvider
   proxy: string
   /** True when the request pinned a proxy mode, so inherited env proxies get cleared. */
   proxyModeSet: boolean
   root: string
-  run: AiInsRun
+  run: PokeRun
   runId: string
 }
 
@@ -46,7 +46,7 @@ export async function startAgentTurn(options: AgentTurnOptions) {
     `\n$ ${agentCommand} ${input === 'argument' ? `${args.join(' ')} <prompt>` : args.join(' ')}\n\n${prompt}\n\n`,
   )
   if (proxy) {
-    logStream.write(`[ai-ins] using proxy ${proxy}\n\n`)
+    logStream.write(`[poke] using proxy ${proxy}\n\n`)
   }
 
   const child = spawn(agentCommand, input === 'argument' ? [...args, prompt] : args, {
@@ -62,7 +62,7 @@ export async function startAgentTurn(options: AgentTurnOptions) {
   let completed = false
   let stdoutBuffer = ''
   const formatJsonLine = createAgentJsonFormatter(root, (text) => {
-    appendAiInsEvent(runId, { message: text, providerId: provider.id, providerLabel: provider.label, turn: turnIndex, type: 'thinking' })
+    appendPokeEvent(runId, { message: text, providerId: provider.id, providerLabel: provider.label, turn: turnIndex, type: 'thinking' })
   })
 
   const heartbeatTimer = setInterval(() => {
@@ -70,7 +70,7 @@ export async function startAgentTurn(options: AgentTurnOptions) {
       return
     }
 
-    appendAiInsEvent(runId, {
+    appendPokeEvent(runId, {
       logPath,
       message: `${provider.label} running · ${Math.max(1, Math.round((Date.now() - startedAt) / 1000))}s`,
       providerId: provider.id,
@@ -80,7 +80,7 @@ export async function startAgentTurn(options: AgentTurnOptions) {
   }, heartbeatIntervalMs)
   ;(heartbeatTimer as unknown as { unref?: () => void }).unref?.()
 
-  appendAiInsEvent(runId, {
+  appendPokeEvent(runId, {
     logPath,
     message: proxy ? `${provider.label} CLI started with proxy ${proxy}` : `${provider.label} CLI started`,
     pid: child.pid,
@@ -99,7 +99,7 @@ export async function startAgentTurn(options: AgentTurnOptions) {
       return
     }
 
-    appendAiInsEvent(runId, {
+    appendPokeEvent(runId, {
       message,
       providerId: provider.id,
       providerLabel: provider.label,
@@ -116,8 +116,8 @@ export async function startAgentTurn(options: AgentTurnOptions) {
 
     const sessionId = readSessionIdFromEvent(parsed, provider.session.sessionIdKeys)
     if (sessionId) {
-      setAiInsRunSessionId(runId, sessionId)
-      logStream.write(`\n[ai-ins] captured session id ${sessionId}\n`)
+      setPokeRunSessionId(runId, sessionId)
+      logStream.write(`\n[poke] captured session id ${sessionId}\n`)
     }
   }
 
@@ -208,8 +208,8 @@ export async function startAgentTurn(options: AgentTurnOptions) {
     completed = true
     clearInterval(heartbeatTimer)
 
-    logStream.write(`\n[ai-ins] ${provider.label} failed to start: ${error.message}\n`)
-    appendAiInsEvent(runId, {
+    logStream.write(`\n[poke] ${provider.label} failed to start: ${error.message}\n`)
+    appendPokeEvent(runId, {
       message: error.message,
       providerId: provider.id,
       providerLabel: provider.label,
@@ -231,17 +231,17 @@ export async function startAgentTurn(options: AgentTurnOptions) {
     cancelPendingPermissions(run)
     run.signal = signal
 
-    logStream.write(`\n[ai-ins] ${provider.label} exited with code=${code ?? 'null'} signal=${signal ?? 'null'}\n`)
+    logStream.write(`\n[poke] ${provider.label} exited with code=${code ?? 'null'} signal=${signal ?? 'null'}\n`)
     void takeWorkspaceSnapshot(root)
       .then((workspaceAfter) => (workspaceBefore && workspaceAfter ? diffWorkspaceSnapshots(workspaceBefore, workspaceAfter) : undefined))
       .then((changedFiles) => (changedFiles ? addWorkspacePatches(root, workspaceBaseline, changedFiles) : undefined))
       .catch(() => undefined)
       .then((changedFiles) => {
         if (changedFiles?.length) {
-          logStream.write(`[ai-ins] changed files:\n${changedFiles.map((file) => `  ${file.status} ${file.path}`).join('\n')}\n`)
+          logStream.write(`[poke] changed files:\n${changedFiles.map((file) => `  ${file.status} ${file.path}`).join('\n')}\n`)
         }
 
-        appendAiInsEvent(runId, {
+        appendPokeEvent(runId, {
           changedFiles,
           code,
           providerId: provider.id,

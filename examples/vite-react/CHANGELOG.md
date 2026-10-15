@@ -1,4 +1,4 @@
-# @ai-ins/playground-vite
+# @poke-dev/playground-vite
 
 ## 0.1.0
 
@@ -9,4 +9,4 @@
 ### Patch Changes
 
 - Updated dependencies
-  - @ai-ins/vite@0.2.0
+  - @poke-dev/vite@0.2.0

@@ -1,23 +1,23 @@
-const root = __AI_INS_ROOT__
-const base = __AI_INS_BASE__
-const defaultProxy = __AI_INS_AGENT_PROXY__
-const agentProviders = __AI_INS_AGENT_PROVIDERS__
-const defaultAgentProviderId = __AI_INS_DEFAULT_AGENT_PROVIDER__
-const targetAttribute = 'data-ai-ins-target'
-const sourceAttribute = 'data-ai-ins-source'
-const sourceRangeAttribute = 'data-ai-ins-source-range'
+const root = __POKE_ROOT__
+const base = __POKE_BASE__
+const defaultProxy = __POKE_AGENT_PROXY__
+const agentProviders = __POKE_AGENT_PROVIDERS__
+const defaultAgentProviderId = __POKE_DEFAULT_AGENT_PROVIDER__
+const targetAttribute = 'data-poke-target'
+const sourceAttribute = 'data-poke-source'
+const sourceRangeAttribute = 'data-poke-source-range'
 // v2: anchored to the nearest edges. The old key held a top-left point that
 // window resizes overwrote; it is ignored, so docks moved by that return to the corner.
-const dockPositionStorageKey = 'ai-ins-dock-anchor'
-const proxyStorageKey = 'ai-ins-proxy'
-const proxyModeStorageKey = 'ai-ins-proxy-mode'
-const providerStorageKey = 'ai-ins-provider'
+const dockPositionStorageKey = 'poke-dock-anchor'
+const proxyStorageKey = 'poke-proxy'
+const proxyModeStorageKey = 'poke-proxy-mode'
+const providerStorageKey = 'poke-provider'
 
 let currentTarget
 let dockButton
 let dockPointerState
 let draftTarget
-let aiInsPanel
+let pokePanel
 let panelRefs
 let selectedRunId
 let suppressDockClick = false

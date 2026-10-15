@@ -1,9 +1,9 @@
 import { createAgentJsonFormatter } from './agent-output'
 import { createPermissionToken, parsePermissionMode } from './permissions'
-import { aiInsRuns, getAiInsTurnOutput } from './run-store'
+import { pokeRuns, getPokeTurnOutput } from './run-store'
 import { existsSync, mkdirSync, readdirSync, readFileSync, renameSync, rmSync, writeFileSync } from 'fs'
 import { join, relative, sep } from 'path'
-import type { AiInsAgentSessionMode, AiInsPluginOptions, AiInsRun, AiInsRunStatus, AiInsRunTurn } from './types'
+import type { PokeAgentSessionMode, PokePluginOptions, PokeRun, PokeRunStatus, PokeRunTurn } from './types'
 
 const historyVersion = 1
 const defaultHistoryLimit = 100
@@ -13,7 +13,7 @@ const persistDebounceMs = 1500
 const maxStoredTurnOutputLength = 64000
 const storedTurnOutputHeadLength = 12000
 // Notices are tokens the panel replaces with text in its own language.
-const storedOutputCompactionNotice = '\n\n[ai-ins:notice:historyTruncated]\n\n'
+const storedOutputCompactionNotice = '\n\n[poke:notice:historyTruncated]\n\n'
 const interruptedTurnMessage = 'interrupted by a dev server restart'
 
 type HistorySettings = {
@@ -21,9 +21,9 @@ type HistorySettings = {
   limit: number
 }
 
-type StoredAiInsRunTurn = Omit<AiInsRunTurn, 'output'> & { output: string }
+type StoredPokeRunTurn = Omit<PokeRunTurn, 'output'> & { output: string }
 
-type StoredAiInsRun = {
+type StoredPokeRun = {
   alwaysAllowedTools?: string[]
   createdAt: number
   eventSeq: number
@@ -34,10 +34,10 @@ type StoredAiInsRun = {
   providerLabel: string
   root: string
   sessionId?: string
-  sessionMode: AiInsAgentSessionMode
+  sessionMode: PokeAgentSessionMode
   sessionStarted: boolean
   signal?: NodeJS.Signals | null
-  turns: StoredAiInsRunTurn[]
+  turns: StoredPokeRunTurn[]
   updatedAt: number
   version: number
 }
@@ -46,7 +46,7 @@ const historySettings = new Map<string, HistorySettings>()
 const loadedRoots = new Set<string>()
 const pendingWrites = new Map<string, ReturnType<typeof setTimeout>>()
 
-export function configureAiInsRunHistory(root: string, history: NonNullable<AiInsPluginOptions['agents']>['history']) {
+export function configurePokeRunHistory(root: string, history: NonNullable<PokePluginOptions['agents']>['history']) {
   const limit = typeof history === 'object' && typeof history.limit === 'number' && history.limit > 0 ? Math.floor(history.limit) : defaultHistoryLimit
   historySettings.set(root, { enabled: history !== false, limit })
 }
@@ -56,7 +56,7 @@ function getHistorySettings(root: string): HistorySettings {
 }
 
 function getHistoryDirectory(root: string) {
-  return join(root, '.ai-ins', 'runs')
+  return join(root, '.poke', 'runs')
 }
 
 function getHistoryFile(root: string, runId: string) {
@@ -77,7 +77,7 @@ export function compactStoredTurnOutput(output: string) {
   return `${output.slice(0, storedTurnOutputHeadLength)}${storedOutputCompactionNotice}${output.slice(output.length - tailLength)}`
 }
 
-function toStoredRun(runId: string, run: AiInsRun): StoredAiInsRun {
+function toStoredRun(runId: string, run: PokeRun): StoredPokeRun {
   return {
     alwaysAllowedTools: [...run.alwaysAllowedTools],
     createdAt: run.createdAt,
@@ -92,7 +92,7 @@ function toStoredRun(runId: string, run: AiInsRun): StoredAiInsRun {
     sessionMode: run.sessionMode,
     sessionStarted: run.sessionStarted,
     signal: run.signal,
-    turns: run.turns.map(({ thinkingSince: _open, ...turn }) => ({ ...turn, output: compactStoredTurnOutput(getAiInsTurnOutput(run, turn.index)) })),
+    turns: run.turns.map(({ thinkingSince: _open, ...turn }) => ({ ...turn, output: compactStoredTurnOutput(getPokeTurnOutput(run, turn.index)) })),
     updatedAt: run.updatedAt,
     version: historyVersion,
   }
@@ -100,7 +100,7 @@ function toStoredRun(runId: string, run: AiInsRun): StoredAiInsRun {
 
 function writeRunFile(runId: string) {
   pendingWrites.delete(runId)
-  const run = aiInsRuns.get(runId)
+  const run = pokeRuns.get(runId)
   if (!run || !getHistorySettings(run.root).enabled || !isSafeRunId(runId)) {
     return
   }
@@ -115,12 +115,12 @@ function writeRunFile(runId: string) {
     writeFileSync(temporaryFileName, JSON.stringify(toStoredRun(runId, run)))
     renameSync(temporaryFileName, fileName)
   } catch (error) {
-    console.error('[ai-ins] save task history failed:', error instanceof Error ? error.message : error)
+    console.error('[poke] save task history failed:', error instanceof Error ? error.message : error)
   }
 }
 
 /** Persist now: used for state changes (new run/turn, session id, turn end). */
-export function persistAiInsRun(runId: string) {
+export function persistPokeRun(runId: string) {
   const pending = pendingWrites.get(runId)
   if (pending) {
     clearTimeout(pending)
@@ -130,7 +130,7 @@ export function persistAiInsRun(runId: string) {
 }
 
 /** Coalesce the stream of output events into one write every so often. */
-export function schedulePersistAiInsRun(runId: string) {
+export function schedulePersistPokeRun(runId: string) {
   if (pendingWrites.has(runId)) {
     return
   }
@@ -140,20 +140,20 @@ export function schedulePersistAiInsRun(runId: string) {
   pendingWrites.set(runId, timer)
 }
 
-/** The run's agent log goes with it, but only a log AI Ins wrote under `<root>/.ai-ins`. */
-function removeRunLog(run: AiInsRun) {
+/** The run's agent log goes with it, but only a log Poke wrote under `<root>/.poke`. */
+function removeRunLog(run: PokeRun) {
   if (!run.logPath) return
-  const path = relative(join(run.root, '.ai-ins'), run.logPath)
+  const path = relative(join(run.root, '.poke'), run.logPath)
   if (!path || path.startsWith('..') || path.includes(sep) || !path.endsWith('.log')) return
   try {
     rmSync(run.logPath, { force: true })
   } catch (error) {
-    console.error('[ai-ins] delete agent log failed:', error instanceof Error ? error.message : error)
+    console.error('[poke] delete agent log failed:', error instanceof Error ? error.message : error)
   }
 }
 
 /** Forget a run on disk: its history file and its agent log. */
-export function removeAiInsRunHistory(runId: string, run: AiInsRun) {
+export function removePokeRunHistory(runId: string, run: PokeRun) {
   const pending = pendingWrites.get(runId)
   if (pending) {
     clearTimeout(pending)
@@ -169,16 +169,16 @@ export function removeAiInsRunHistory(runId: string, run: AiInsRun) {
   try {
     rmSync(getHistoryFile(run.root, runId), { force: true })
   } catch (error) {
-    console.error('[ai-ins] delete task history failed:', error instanceof Error ? error.message : error)
+    console.error('[poke] delete task history failed:', error instanceof Error ? error.message : error)
   }
 }
 
-function isRunStatus(value: unknown): value is AiInsRunStatus {
+function isRunStatus(value: unknown): value is PokeRunStatus {
   return value === 'done' || value === 'failed' || value === 'running' || value === 'starting'
 }
 
-function restoreTurn(stored: StoredAiInsRunTurn, index: number): AiInsRunTurn {
-  const turn: AiInsRunTurn = {
+function restoreTurn(stored: StoredPokeRunTurn, index: number): PokeRunTurn {
+  const turn: PokeRunTurn = {
     agentPrompt: typeof stored.agentPrompt === 'string' ? stored.agentPrompt : '',
     changedFiles: Array.isArray(stored.changedFiles) ? stored.changedFiles : undefined,
     code: stored.code,
@@ -214,7 +214,7 @@ function restoreTurn(stored: StoredAiInsRunTurn, index: number): AiInsRunTurn {
   return turn
 }
 
-function restoreRun(stored: StoredAiInsRun, root: string): AiInsRun | undefined {
+function restoreRun(stored: StoredPokeRun, root: string): PokeRun | undefined {
   if (!stored || stored.version !== historyVersion || !Array.isArray(stored.turns) || !stored.turns.length) {
     return undefined
   }
@@ -268,7 +268,7 @@ const legacyCodexOutputPattern = /^\[item\.(?:started|completed)\]/mu
  * with a `$ <command>` line), so old conversations read like new ones.
  * Returns true when anything changed and the run should be saved again.
  */
-function reformatLegacyCodexTurns(run: AiInsRun, root: string) {
+function reformatLegacyCodexTurns(run: PokeRun, root: string) {
   const turns = run.turns.filter((turn) => legacyCodexOutputPattern.test(turn.output || ''))
   if (run.providerId !== 'codex' || !turns.length || !run.logPath || !existsSync(run.logPath)) {
     return false
@@ -315,7 +315,7 @@ function reformatLegacyCodexTurns(run: AiInsRun, root: string) {
  * Pull this root's history into memory the first time anything asks for runs.
  * Lazy so a dev server that never opens the panel never touches the disk.
  */
-export function ensureAiInsRunHistoryLoaded(root: string) {
+export function ensurePokeRunHistoryLoaded(root: string) {
   if (loadedRoots.has(root)) {
     return
   }
@@ -334,53 +334,53 @@ export function ensureAiInsRunHistoryLoaded(root: string) {
   try {
     fileNames = readdirSync(directory).filter((fileName) => fileName.endsWith('.json'))
   } catch (error) {
-    console.error('[ai-ins] read task history failed:', error instanceof Error ? error.message : error)
+    console.error('[poke] read task history failed:', error instanceof Error ? error.message : error)
     return
   }
 
   const interruptedRunIds: string[] = []
   for (const fileName of fileNames) {
     const runId = fileName.slice(0, -'.json'.length)
-    if (aiInsRuns.has(runId) || !isSafeRunId(runId)) {
+    if (pokeRuns.has(runId) || !isSafeRunId(runId)) {
       continue
     }
 
     try {
-      const stored = JSON.parse(readFileSync(join(directory, fileName), 'utf-8')) as StoredAiInsRun
+      const stored = JSON.parse(readFileSync(join(directory, fileName), 'utf-8')) as StoredPokeRun
       const run = restoreRun(stored, root)
       if (!run) {
         continue
       }
 
-      aiInsRuns.set(runId, run)
+      pokeRuns.set(runId, run)
       const reformatted = reformatLegacyCodexTurns(run, root)
       if (reformatted || run.turns.some((turn, index) => turn.interrupted && !stored.turns[index]?.interrupted)) {
         interruptedRunIds.push(runId)
       }
     } catch (error) {
-      console.error(`[ai-ins] skip unreadable task history ${fileName}:`, error instanceof Error ? error.message : error)
+      console.error(`[poke] skip unreadable task history ${fileName}:`, error instanceof Error ? error.message : error)
     }
   }
 
   // Record the interruption (and any re-derived output) once, so it is not
   // redone (and re-appended to the output) on every restart.
   for (const runId of interruptedRunIds) {
-    persistAiInsRun(runId)
+    persistPokeRun(runId)
   }
 
-  pruneAiInsRunHistory(root)
+  prunePokeRunHistory(root)
 }
 
-export function getAiInsRunActivityAt(run: AiInsRun) {
+export function getPokeRunActivityAt(run: PokeRun) {
   return Math.max(run.updatedAt || 0, run.turns[run.turns.length - 1]?.createdAt || 0, run.createdAt)
 }
 
 /** Keep at most `limit` runs per root; running and pinned runs are never pruned. */
-export function pruneAiInsRunHistory(root: string) {
+export function prunePokeRunHistory(root: string) {
   const { limit } = getHistorySettings(root)
-  const rootRuns = [...aiInsRuns.entries()]
+  const rootRuns = [...pokeRuns.entries()]
     .filter(([, run]) => run.root === root)
-    .sort(([, firstRun], [, secondRun]) => getAiInsRunActivityAt(secondRun) - getAiInsRunActivityAt(firstRun))
+    .sort(([, firstRun], [, secondRun]) => getPokeRunActivityAt(secondRun) - getPokeRunActivityAt(firstRun))
 
   let kept = 0
   for (const [runId, run] of rootRuns) {
@@ -389,7 +389,7 @@ export function pruneAiInsRunHistory(root: string) {
       continue
     }
 
-    aiInsRuns.delete(runId)
-    removeAiInsRunHistory(runId, run)
+    pokeRuns.delete(runId)
+    removePokeRunHistory(runId, run)
   }
 }

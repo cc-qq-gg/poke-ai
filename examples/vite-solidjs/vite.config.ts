@@ -1,10 +1,10 @@
-import aiIns from '@ai-ins/vite'
+import poke from '@poke-dev/vite'
 import { defineConfig } from 'vite'
 import solid from 'vite-plugin-solid'
 
 export default defineConfig({
   plugins: [
-    aiIns(),
+    poke(),
     solid(),
   ],
   server: {

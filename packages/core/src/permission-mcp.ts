@@ -2,7 +2,7 @@
  * Stand-alone MCP stdio server that Claude Code calls through
  * `--permission-prompt-tool` whenever a tool needs approval in `-p` mode.
  *
- * It forwards each request to the AI Ins dev server, which shows it in the
+ * It forwards each request to the Poke dev server, which shows it in the
  * panel and holds the HTTP request open until the user answers. Runs as its
  * own process (spawned by the agent CLI), so it has no dependencies and only
  * talks newline-delimited JSON-RPC on stdio.
@@ -18,7 +18,7 @@ type JsonRpcMessage = {
 
 type PermissionAnswer = { behavior: 'allow' | 'deny'; message?: string }
 
-const permissionUrl = process.env.AI_INS_PERMISSION_URL || ''
+const permissionUrl = process.env.POKE_PERMISSION_URL || ''
 const toolName = 'approve'
 
 function send(message: Record<string, unknown>) {
@@ -33,7 +33,7 @@ function askDevServer(body: unknown) {
   return new Promise<PermissionAnswer>((resolve) => {
     const deny = (message: string) => resolve({ behavior: 'deny', message })
     if (!permissionUrl) {
-      deny('AI Ins permission bridge is not configured.')
+      deny('Poke permission bridge is not configured.')
       return
     }
 
@@ -58,13 +58,13 @@ function askDevServer(body: unknown) {
             const answer = JSON.parse(text) as PermissionAnswer
             resolve(answer.behavior === 'allow' ? { behavior: 'allow' } : { behavior: 'deny', message: answer.message || 'Denied by the user.' })
           } catch {
-            deny(`AI Ins permission bridge failed: ${text.slice(0, 200)}`)
+            deny(`Poke permission bridge failed: ${text.slice(0, 200)}`)
           }
         })
       },
     )
 
-    request.on('error', (error) => deny(`AI Ins permission bridge failed: ${error.message}`))
+    request.on('error', (error) => deny(`Poke permission bridge failed: ${error.message}`))
     request.end(payload)
   })
 }
@@ -78,7 +78,7 @@ async function handle(message: JsonRpcMessage) {
       result: {
         capabilities: { tools: {} },
         protocolVersion: typeof params?.protocolVersion === 'string' ? params.protocolVersion : '2025-06-18',
-        serverInfo: { name: 'ai-ins', version: '1.0.0' },
+        serverInfo: { name: 'poke', version: '1.0.0' },
       },
     })
     return
@@ -90,7 +90,7 @@ async function handle(message: JsonRpcMessage) {
       result: {
         tools: [
           {
-            description: 'Ask the AI Ins panel user whether a tool call may run.',
+            description: 'Ask the Poke panel user whether a tool call may run.',
             inputSchema: {
               properties: {
                 input: { type: 'object' },

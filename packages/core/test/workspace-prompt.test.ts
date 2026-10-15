@@ -3,11 +3,11 @@ import { tmpdir } from 'os'
 import { join } from 'path'
 import { PassThrough } from 'stream'
 import { afterAll, describe, expect, it } from 'vitest'
-import { aiInsEditMiddleware } from '../src/middleware'
-import { aiInsRuns } from '../src/run-store'
+import { pokeEditMiddleware } from '../src/middleware'
+import { pokeRuns } from '../src/run-store'
 import { buildFollowUpAgentPrompt, buildWorkspaceAgentPrompt } from '../src/source'
 
-const root = mkdtempSync(join(tmpdir(), 'ai-ins-workspace-'))
+const root = mkdtempSync(join(tmpdir(), 'poke-workspace-'))
 afterAll(() => rmSync(root, { force: true, recursive: true }))
 
 describe('conversations without a picked element', () => {
@@ -28,7 +28,7 @@ describe('conversations without a picked element', () => {
 
   it('starts a run when the request has no file', async () => {
     // A stand-in agent that just echoes its prompt.
-    const middleware = aiInsEditMiddleware(
+    const middleware = pokeEditMiddleware(
       root,
       {
         agents: {
@@ -39,7 +39,7 @@ describe('conversations without a picked element', () => {
       },
       '',
     )
-    const req = Object.assign(new PassThrough(), { method: 'POST', socket: { localAddress: '127.0.0.1', localPort: 1 }, url: '/__ai-ins-agent' })
+    const req = Object.assign(new PassThrough(), { method: 'POST', socket: { localAddress: '127.0.0.1', localPort: 1 }, url: '/__poke-agent' })
     req.end(JSON.stringify({ page: 'http://localhost:5173/', prompt: 'Add a footer', provider: 'echo' }))
     const body = await new Promise<string>((resolve) => {
       const res = { end: resolve, setHeader: () => {}, statusCode: 200 }
@@ -49,7 +49,7 @@ describe('conversations without a picked element', () => {
     const result = JSON.parse(body)
     expect(result.success).toBe(true)
     expect(result.fileName).toBe('')
-    const run = aiInsRuns.get(result.runId)!
+    const run = pokeRuns.get(result.runId)!
     expect(run.sourcePath).toBe('')
     expect(run.turns[0].agentPrompt).toContain('Add a footer')
     // Let the echo agent finish and its log close before the temp root goes away.

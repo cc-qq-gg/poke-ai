@@ -1,4 +1,4 @@
-# @ai-ins/core
+# @poke-dev/core
 
 ## 1.0.4
 
@@ -48,9 +48,9 @@
 
   **破坏性变更**
 
-  - 面板 class 前缀从 `wbx-ai-ins-` 缩短为 `ai-ins-`，CSS 变量同步改为 `--ai-ins-*`；如果你在项目里覆盖过面板样式，需要同步改选择器。
+  - 面板 class 前缀从 `wbx-poke-` 缩短为 `poke-`，CSS 变量同步改为 `--poke-*`；如果你在项目里覆盖过面板样式，需要同步改选择器。
   - 为了能续跑，默认不再给 codex 传 `--ephemeral`、给 claude 传 `--no-session-persistence`，Agent CLI 会把会话写到磁盘；设置 `agents.sessions: false` 可恢复单轮、不落盘的行为。
-  - 任务历史默认写入 `<root>/.ai-ins/runs/*.json`（建议把 `.ai-ins` 加入 `.gitignore`）；设置 `agents.history: false` 可只保存在内存里。
+  - 任务历史默认写入 `<root>/.poke/runs/*.json`（建议把 `.poke` 加入 `.gitignore`）；设置 `agents.history: false` 可只保存在内存里。
   - 交互规则调整：点左侧历史会话一定在该会话里继续；`Option` / `Alt` 点选页面元素一定开新会话。
 
   **多轮会话**
@@ -76,11 +76,11 @@
 
   **历史会话**
 
-  - 历史写入 `.ai-ins/runs/*.json`，刷新页面、重启 dev server 后列表和续跑能力都还在；运行中被重启打断的轮次标记为「已中断」，有会话的仍可继续追问。新增 `agents.history`（`false` 或 `{ limit }`，默认每个项目保留 100 条，运行中的不清理）。
+  - 历史写入 `.poke/runs/*.json`，刷新页面、重启 dev server 后列表和续跑能力都还在；运行中被重启打断的轮次标记为「已中断」，有会话的仍可继续追问。新增 `agents.history`（`false` 或 `{ limit }`，默认每个项目保留 100 条，运行中的不清理）。
   - 列表以第一句需求为标题，第二行是焦点元素和 Agent；按最近活动排序并按天分组，支持搜索和「清空已结束」；状态用颜色区分，只有无法继续的会话才额外标出原因。
   - 多个标签页 / 浏览器之间自动同步会话列表（按版本号轮询，列表没变时只是一次很小的请求）。
   - 右键会话可以置顶 / 取消置顶或删除；置顶的会话单独成组排在最上面，不会被自动清理或「清空已结束」删除。
-  - 删除会话时连同它在 `.ai-ins/` 下的 `.log` 一起删除。
+  - 删除会话时连同它在 `.poke/` 下的 `.log` 一起删除。
 
   **改动与 diff**
 
@@ -89,7 +89,7 @@
 
   **设置与体验**
 
-  - 面板设置写入 `~/.ai-ins/settings.json`，跨项目、端口和浏览器共用（`AI_INS_HOME` 可改目录）；首次运行时迁移浏览器里已有的设置。
+  - 面板设置写入 `~/.poke/settings.json`，跨项目、端口和浏览器共用（`POKE_HOME` 可改目录）；首次运行时迁移浏览器里已有的设置。
   - 可选的系统通知：任务完成、失败或等待授权且你没在看面板时提醒，点击打开对应会话。
   - Codex 的 `exec --json` 事件单独格式化：回复正文 + 每次工具调用一行，工具返回的大段内容（如 MCP 生成的代码）只留在日志里；旧会话加载时按日志重新整理。
   - 界面重新设计：左右分栏（品牌在侧边栏顶部，操作归到会话顶栏），配色与字体参考 ChatGPT 桌面端，动画品牌标识，新增使用说明；设置面板改为分组卡片。
@@ -103,8 +103,8 @@
 
 - 5df7279: 新增 Astro 一等支持
 
-  - 新增 `@ai-ins/astro` integration：仅在 `astro dev` 下挂载 AI Ins middleware 并通过页面脚本注入客户端，`astro build` 产物不受影响；`.astro` 模板在 Astro 编译前注入精确的 source 标记，React / Vue / Svelte 岛屿沿用 `@ai-ins/vite` 的注入；支持 Astro 4 ~ 7，不依赖 dev toolbar。
-  - `ai-ins` CLI 识别 Astro 项目（优先于 vite），安装 `@ai-ins/astro` 并改写 `astro.config.*` 的 `integrations`；新增 `--bundler astro`。多行数组追加插件时保留 `]` 的原有换行，import 插入后不再多出空行。
+  - 新增 `@poke-dev/astro` integration：仅在 `astro dev` 下挂载 Poke middleware 并通过页面脚本注入客户端，`astro build` 产物不受影响；`.astro` 模板在 Astro 编译前注入精确的 source 标记，React / Vue / Svelte 岛屿沿用 `@poke-dev/vite` 的注入；支持 Astro 4 ~ 7，不依赖 dev toolbar。
+  - `poke` CLI 识别 Astro 项目（优先于 vite），安装 `@poke-dev/astro` 并改写 `astro.config.*` 的 `integrations`；新增 `--bundler astro`。多行数组追加插件时保留 `]` 的原有换行，import 插入后不再多出空行。
   - core 客户端兼容 Astro 原生的 `data-astro-source-file` / `data-astro-source-loc` 作为定位回退，并加入幂等保护，避免同一页面被多个入口重复初始化。
 
 ## 0.4.9
@@ -124,7 +124,7 @@
 
 - 组件级源定位：Option 点选不再只覆盖原生 DOM 标签。
 
-  - JSX transform 现在也给组件元素（大写标识符与 `Foo.Bar` 成员表达式）注入 `data-ai-ins-source`：spread 透传型组件（Radix / shadcn 等 `{...props}` 直达 DOM 的包装，含 portal 到 `document.body` 的浮层）会把定位属性带到最终 DOM 上；注入改为 unshift，外层调用点透传的属性覆盖包装内部，点选定位到应用侧 JSX 而非组件库内部。跳过 Fragment 等 React 内建。
+  - JSX transform 现在也给组件元素（大写标识符与 `Foo.Bar` 成员表达式）注入 `data-poke-source`：spread 透传型组件（Radix / shadcn 等 `{...props}` 直达 DOM 的包装，含 portal 到 `document.body` 的浮层）会把定位属性带到最终 DOM 上；注入改为 unshift，外层调用点透传的属性覆盖包装内部，点选定位到应用侧 JSX 而非组件库内部。跳过 Fragment 等 React 内建。
   - 客户端拾取新增 React fiber 兜底（`_debugSource`，React <= 18 dev）：属性链完全没命中（不透传 props 的组件、portal 场景）时从 fiber 树反查工作区源位置。
   - 拾取目标从 `HTMLElement` 放宽到 `Element`：svg / path 等图形元素也能被 Option 悬停与点选。
   - dock 与面板加 `pointer-events: auto`：宿主页面被 Radix 等 modal 浮层锁住 `body` 指针事件时不再失灵。
@@ -145,13 +145,13 @@
 
 ### Patch Changes
 
-- Polish the AI Ins panel branding, clarify built-in CLI provider names, and make backdrop clicks close the panel only after clicking from the backdrop itself.
+- Polish the Poke panel branding, clarify built-in CLI provider names, and make backdrop clicks close the panel only after clicking from the backdrop itself.
 
 ## 0.4.4
 
 ### Patch Changes
 
-- Allow the AI Ins panel to resize while preserving usable minimum dimensions.
+- Allow the Poke panel to resize while preserving usable minimum dimensions.
 
 ## 0.4.3
 
@@ -163,13 +163,13 @@
 
 ### Patch Changes
 
-- Improve the AI Ins panel target selection flow and remove automatic history continuation from agent prompts.
+- Improve the Poke panel target selection flow and remove automatic history continuation from agent prompts.
 
 ## 0.4.1
 
 ### Patch Changes
 
-- Add author and GitHub package metadata across published packages, and refresh the `ai-ins` CLI package README.
+- Add author and GitHub package metadata across published packages, and refresh the `poke` CLI package README.
 
 ## 0.4.0
 

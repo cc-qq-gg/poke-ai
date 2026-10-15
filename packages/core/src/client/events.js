@@ -13,7 +13,7 @@ window.addEventListener('mousemove', (event) => {
   }
 
   // Element 而非 HTMLElement：svg/path 等图形元素也常是事件目标。
-  if (!(event.target instanceof Element) || event.target.closest('.ai-ins-dialog, .ai-ins-dock')) {
+  if (!(event.target instanceof Element) || event.target.closest('.poke-dialog, .poke-dock')) {
     clearOverlay()
     return
   }
@@ -30,7 +30,7 @@ window.addEventListener('mousemove', (event) => {
 
   clearOverlay()
   currentTarget = sourceTarget
-  currentTarget.dataset.aiInsTarget = 'true'
+  currentTarget.dataset.pokeTarget = 'true'
 })
 
 window.addEventListener(
@@ -41,7 +41,7 @@ window.addEventListener(
     }
 
     const target = event.target
-    if (!(target instanceof Element) || target.closest('.ai-ins-dialog, .ai-ins-dock')) {
+    if (!(target instanceof Element) || target.closest('.poke-dialog, .poke-dock')) {
       return
     }
 
@@ -65,13 +65,13 @@ window.addEventListener(
     if (isOpenSourceShortcut(event)) {
       void openInEditor(preferredLayer.path)
         .catch((error) => {
-          console.error('[ai-ins] open in editor failed:', error)
+          console.error('[poke] open in editor failed:', error)
         })
         .finally(cleanUp)
       return
     }
 
-    globalThis.aiInsPanelRuntime?.showAiInsPanel(preferredLayer, layers)
+    globalThis.pokePanelRuntime?.showPokePanel(preferredLayer, layers)
     cleanUp()
   },
   true,

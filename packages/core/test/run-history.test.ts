@@ -2,12 +2,12 @@ import { mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSyn
 import { tmpdir } from 'os'
 import { join } from 'path'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
-import { createAiInsMiddlewares } from '../src/index'
-import type { AiInsMiddleware, AiInsRoute } from '../src/types'
+import { createPokeMiddlewares } from '../src/index'
+import type { PokeMiddleware, PokeRoute } from '../src/types'
 
 type Response = { body: any; status: number }
 
-function call(middleware: AiInsMiddleware, method: string, url: string) {
+function call(middleware: PokeMiddleware, method: string, url: string) {
   return new Promise<Response>((resolve) => {
     const res = {
       setHeader() {},
@@ -26,7 +26,7 @@ function call(middleware: AiInsMiddleware, method: string, url: string) {
   })
 }
 
-const runs = (routes: AiInsRoute[]) => routes.find((route) => route.path === '/__ai-ins-agent/runs')!.middleware
+const runs = (routes: PokeRoute[]) => routes.find((route) => route.path === '/__poke-agent/runs')!.middleware
 
 function storedRun(id: string, root: string, at: number, completed = true) {
   return {
@@ -34,7 +34,7 @@ function storedRun(id: string, root: string, at: number, completed = true) {
     createdAt: at,
     eventSeq: 5,
     id,
-    logPath: join(root, '.ai-ins', `${id}.log`),
+    logPath: join(root, '.poke', `${id}.log`),
     providerId: 'claude',
     providerLabel: 'Claude',
     root,
@@ -66,10 +66,10 @@ let base = ''
 const rootA = () => join(base, 'a')
 const rootB = () => join(base, 'b')
 const rootC = () => join(base, 'c')
-const historyOf = (root: string) => join(root, '.ai-ins', 'runs')
+const historyOf = (root: string) => join(root, '.poke', 'runs')
 
 beforeAll(() => {
-  base = mkdtempSync(join(tmpdir(), 'ai-ins-history-'))
+  base = mkdtempSync(join(tmpdir(), 'poke-history-'))
   for (const root of [rootA(), rootB(), rootC()]) mkdirSync(historyOf(root), { recursive: true })
   const save = (root: string, run: ReturnType<typeof storedRun>) => writeFileSync(join(historyOf(root), `${run.id}.json`), JSON.stringify(run))
   save(rootA(), storedRun('r1', rootA(), 1000))
@@ -87,13 +87,13 @@ afterAll(() => {
 
 describe('run history', () => {
   it('restores runs from disk, keeps the newest within the limit and skips broken files', async () => {
-    const list = await call(runs(createAiInsMiddlewares(rootA(), { agents: { history: { limit: 2 } } })), 'GET', '/')
+    const list = await call(runs(createPokeMiddlewares(rootA(), { agents: { history: { limit: 2 } } })), 'GET', '/')
     expect(list.body.runs.map((run: { id: string }) => run.id)).toEqual(['r4', 'r3'])
     expect(readdirSync(historyOf(rootA())).sort()).toEqual(['broken.json', 'r3.json', 'r4.json'])
   })
 
   it('marks a turn cut off by a restart as interrupted, keeps its output, and stays resumable', async () => {
-    const middleware = runs(createAiInsMiddlewares(rootA(), { agents: { history: { limit: 2 } } }))
+    const middleware = runs(createPokeMiddlewares(rootA(), { agents: { history: { limit: 2 } } }))
     const { body } = await call(middleware, 'GET', '/?id=r4')
     expect(body.run).toMatchObject({ canResume: true, interrupted: true, resumeBlockedCode: '', status: 'failed' })
     expect(body.run.turns[0].output).toBe('out-r4')
@@ -102,28 +102,28 @@ describe('run history', () => {
   })
 
   it('leaves transcripts out of the list but returns them per run', async () => {
-    const middleware = runs(createAiInsMiddlewares(rootA()))
+    const middleware = runs(createPokeMiddlewares(rootA()))
     const list = await call(middleware, 'GET', '/')
     expect(list.body.runs[1].turns[0].output).toBeUndefined()
     expect((await call(middleware, 'GET', '/?id=r3')).body.run.turns[0].output).toBe('out-r3')
   })
 
   it('answers "unchanged" for the current list version', async () => {
-    const middleware = runs(createAiInsMiddlewares(rootA()))
+    const middleware = runs(createPokeMiddlewares(rootA()))
     const { version } = (await call(middleware, 'GET', '/')).body
     expect((await call(middleware, 'GET', `/?version=${version}`)).body).toEqual({ unchanged: true, version })
   })
 
   it('keeps projects apart and honors history: false', async () => {
-    expect((await call(runs(createAiInsMiddlewares(rootB())), 'GET', '/')).body.runs.map((run: { id: string }) => run.id)).toEqual(['b1'])
-    expect((await call(runs(createAiInsMiddlewares(rootA())), 'GET', '/?id=b1')).status).toBe(404)
-    expect((await call(runs(createAiInsMiddlewares(rootC(), { agents: { history: false } })), 'GET', '/')).body.runs).toEqual([])
+    expect((await call(runs(createPokeMiddlewares(rootB())), 'GET', '/')).body.runs.map((run: { id: string }) => run.id)).toEqual(['b1'])
+    expect((await call(runs(createPokeMiddlewares(rootA())), 'GET', '/?id=b1')).status).toBe(404)
+    expect((await call(runs(createPokeMiddlewares(rootC(), { agents: { history: false } })), 'GET', '/')).body.runs).toEqual([])
   })
 
   it('clears finished runs of one project, files included', async () => {
-    const cleared = await call(runs(createAiInsMiddlewares(rootA())), 'DELETE', '/?scope=finished')
+    const cleared = await call(runs(createPokeMiddlewares(rootA())), 'DELETE', '/?scope=finished')
     expect(cleared.body.removedIds.sort()).toEqual(['r3', 'r4'])
     expect(readdirSync(historyOf(rootA()))).toEqual(['broken.json'])
-    expect((await call(runs(createAiInsMiddlewares(rootB())), 'GET', '/')).body.runs).toHaveLength(1)
+    expect((await call(runs(createPokeMiddlewares(rootB())), 'GET', '/')).body.runs).toHaveLength(1)
   })
 })

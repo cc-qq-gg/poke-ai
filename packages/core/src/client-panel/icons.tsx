@@ -22,7 +22,7 @@ export function IconButton({ children, disabled, label, success, onClick }: Icon
   return (
     <button
       aria-label={label}
-      className={`ai-ins-icon-button${success ? ' ai-ins-icon-button-success' : ''}`}
+      className={`poke-icon-button${success ? ' poke-icon-button-success' : ''}`}
       disabled={disabled}
       onClick={onClick}
       title={label}
@@ -99,3 +99,74 @@ export const pinOffIcon = [
 ]
 
 export const trashIcon = ['M3 6h18', 'M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6', 'M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2']
+
+/*
+ * Brand glyph: four selection brackets framing a poke point — the picked
+ * element and the click that reaches its source. One vector, shared by the
+ * React panel header, the empty state and the vanilla dock, so the mark never
+ * drifts between them. Sits inside the .poke-brand-mark tile (CSS) and inherits
+ * `currentColor`, so themes only change a color.
+ */
+export const brandBracketPaths = [
+  'M6.5 9.5V8a1.5 1.5 0 0 1 1.5-1.5h1.5',
+  'M14.5 6.5H16A1.5 1.5 0 0 1 17.5 8v1.5',
+  'M17.5 14.5V16A1.5 1.5 0 0 1 16 17.5h-1.5',
+  'M9.5 17.5H8A1.5 1.5 0 0 1 6.5 16v-1.5',
+]
+const brandRing = { cx: 12, cy: 12, r: 2.75 }
+const brandDot = { cx: 12, cy: 12, r: 1.25 }
+const svgNamespace = 'http://www.w3.org/2000/svg'
+
+export function BrandGlyph() {
+  return (
+    <svg aria-hidden="true" className="poke-brand-glyph" viewBox="0 0 24 24">
+      <g fill="none" stroke="currentColor" strokeLinecap="round" strokeWidth="1.6">
+        {brandBracketPaths.map((d) => (
+          <path d={d} key={d} />
+        ))}
+      </g>
+      <circle className="poke-brand-ring" cx={brandRing.cx} cy={brandRing.cy} fill="none" r={brandRing.r} stroke="currentColor" strokeWidth="1.2" />
+      <circle className="poke-brand-dot" cx={brandDot.cx} cy={brandDot.cy} fill="currentColor" r={brandDot.r} />
+    </svg>
+  )
+}
+
+// DOM builder for the non-React dock, producing the exact same glyph.
+export function createBrandGlyphElement(): SVGElement {
+  const svg = document.createElementNS(svgNamespace, 'svg')
+  svg.setAttribute('class', 'poke-brand-glyph')
+  svg.setAttribute('viewBox', '0 0 24 24')
+  svg.setAttribute('aria-hidden', 'true')
+
+  const brackets = document.createElementNS(svgNamespace, 'g')
+  brackets.setAttribute('fill', 'none')
+  brackets.setAttribute('stroke', 'currentColor')
+  brackets.setAttribute('stroke-linecap', 'round')
+  brackets.setAttribute('stroke-width', '1.6')
+  for (const d of brandBracketPaths) {
+    const path = document.createElementNS(svgNamespace, 'path')
+    path.setAttribute('d', d)
+    brackets.append(path)
+  }
+  svg.append(brackets)
+
+  const ring = document.createElementNS(svgNamespace, 'circle')
+  ring.setAttribute('class', 'poke-brand-ring')
+  ring.setAttribute('cx', String(brandRing.cx))
+  ring.setAttribute('cy', String(brandRing.cy))
+  ring.setAttribute('r', String(brandRing.r))
+  ring.setAttribute('fill', 'none')
+  ring.setAttribute('stroke', 'currentColor')
+  ring.setAttribute('stroke-width', '1.2')
+  svg.append(ring)
+
+  const dot = document.createElementNS(svgNamespace, 'circle')
+  dot.setAttribute('class', 'poke-brand-dot')
+  dot.setAttribute('cx', String(brandDot.cx))
+  dot.setAttribute('cy', String(brandDot.cy))
+  dot.setAttribute('r', String(brandDot.r))
+  dot.setAttribute('fill', 'currentColor')
+  svg.append(dot)
+
+  return svg
+}

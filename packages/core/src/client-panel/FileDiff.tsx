@@ -76,52 +76,52 @@ export function FileDiff({ cacheKey, fill, load }: { cacheKey: string; fill?: bo
   }, [cacheKey])
 
   if (error) {
-    return <div className="ai-ins-diff-note">{error}</div>
+    return <div className="poke-diff-note">{error}</div>
   }
 
   if (!data) {
-    return <div className="ai-ins-diff-note">{t('files.diffLoading')}</div>
+    return <div className="poke-diff-note">{t('files.diffLoading')}</div>
   }
 
   if (data.binary) {
-    return <div className="ai-ins-diff-note">{t('files.diffBinary')}</div>
+    return <div className="poke-diff-note">{t('files.diffBinary')}</div>
   }
 
   if (data.patch === null) {
-    return <div className="ai-ins-diff-note">{t('files.diffUnavailable')}</div>
+    return <div className="poke-diff-note">{t('files.diffUnavailable')}</div>
   }
 
   const lines = parseUnifiedDiff(data.patch)
   if (!lines.length) {
-    return <div className="ai-ins-diff-note">{t('files.diffEmpty')}</div>
+    return <div className="poke-diff-note">{t('files.diffEmpty')}</div>
   }
 
   return (
-    <div className={`ai-ins-diff${fill ? ' ai-ins-diff-fill' : ''}`}>
-      <div className="ai-ins-diff-scroll">
+    <div className={`poke-diff${fill ? ' poke-diff-fill' : ''}`}>
+      <div className="poke-diff-scroll">
         <table>
           <tbody>
             {lines.map((line, index) =>
               line.kind === 'hunk' || line.kind === 'note' ? (
-                <tr className={`ai-ins-diff-row-${line.kind}`} key={index}>
-                  <td className="ai-ins-diff-num" colSpan={2} />
-                  <td className="ai-ins-diff-code" colSpan={2}>
+                <tr className={`poke-diff-row-${line.kind}`} key={index}>
+                  <td className="poke-diff-num" colSpan={2} />
+                  <td className="poke-diff-code" colSpan={2}>
                     {line.text}
                   </td>
                 </tr>
               ) : (
-                <tr className={`ai-ins-diff-row-${line.kind}`} key={index}>
-                  <td className="ai-ins-diff-num">{line.oldLine ?? ''}</td>
-                  <td className="ai-ins-diff-num">{line.newLine ?? ''}</td>
-                  <td className="ai-ins-diff-marker">{markers[line.kind]}</td>
-                  <td className="ai-ins-diff-code">{line.text || ' '}</td>
+                <tr className={`poke-diff-row-${line.kind}`} key={index}>
+                  <td className="poke-diff-num">{line.oldLine ?? ''}</td>
+                  <td className="poke-diff-num">{line.newLine ?? ''}</td>
+                  <td className="poke-diff-marker">{markers[line.kind]}</td>
+                  <td className="poke-diff-code">{line.text || ' '}</td>
                 </tr>
               ),
             )}
           </tbody>
         </table>
       </div>
-      {data.truncated ? <div className="ai-ins-diff-note ai-ins-diff-note-foot">{t('files.diffTruncated')}</div> : null}
+      {data.truncated ? <div className="poke-diff-note poke-diff-note-foot">{t('files.diffTruncated')}</div> : null}
     </div>
   )
 }

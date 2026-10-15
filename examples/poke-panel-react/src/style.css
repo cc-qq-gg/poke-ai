@@ -17,7 +17,7 @@
     sans-serif;
 }
 
-.panel-playground-shell [data-ai-ins-target] {
+.panel-playground-shell [data-poke-target] {
   outline: auto 1px !important;
   cursor: pointer !important;
 }

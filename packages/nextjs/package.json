@@ -1,17 +1,17 @@
 {
-  "name": "@ai-ins/nextjs",
+  "name": "@poke-dev/nextjs",
   "version": "1.0.4",
-  "description": "Next.js plugin for AI Ins.",
+  "description": "Next.js plugin for Poke.",
   "author": "Rongding Wang <wangrongding@qq.com> (https://github.com/wangrongding)",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/wangrongding/ai-ins.git",
+    "url": "git+https://github.com/wangrongding/poke.git",
     "directory": "packages/nextjs"
   },
   "bugs": {
-    "url": "https://github.com/wangrongding/ai-ins/issues"
+    "url": "https://github.com/wangrongding/poke/issues"
   },
-  "homepage": "https://github.com/wangrongding/ai-ins/tree/main/packages/nextjs",
+  "homepage": "https://github.com/wangrongding/poke/tree/main/packages/nextjs",
   "type": "module",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
@@ -51,7 +51,7 @@
     "next": "^14.0.0 || ^15.0.0 || ^16.0.0"
   },
   "dependencies": {
-    "@ai-ins/core": "workspace:*",
+    "@poke-dev/core": "workspace:*",
     "@babel/core": "^7.29.0",
     "@babel/plugin-transform-react-jsx": "^7.28.6",
     "@babel/plugin-transform-typescript": "^7.28.6"

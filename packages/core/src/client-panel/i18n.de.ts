@@ -262,7 +262,7 @@ export const de: MessageCatalog = {
   'settings.permissionFixed': 'Die Berechtigungen von {provider} werden über eigene Startparameter festgelegt; diese Einstellung gilt dort nicht.',
   'turn.fullAccess': 'Vollzugriff',
   'dock.waitingPermission': { one: '{count} Unterhaltung wartet auf Genehmigung', other: '{count} Unterhaltungen warten auf Genehmigung' },
-  'dock.open': 'AI Ins öffnen',
+  'dock.open': 'Poke öffnen',
   'error.permissionGone': 'Diese Berechtigungsanfrage ist nicht mehr gültig (der Agent ist möglicherweise bereits abgeschlossen).',
   'error.diffGone': 'Der Diff dieser Datei ist nicht mehr verfügbar',
 
@@ -277,7 +277,7 @@ export const de: MessageCatalog = {
   // Dock button
   'dock.running': { one: '{count} Unterhaltung wird ausgeführt', other: '{count} Unterhaltungen werden ausgeführt' },
   'dock.unread': { one: '{count} Unterhaltung mit neuem Ergebnis', other: '{count} Unterhaltungen mit neuem Ergebnis' },
-  'dock.total': { one: '{count} AI Ins-Unterhaltung', other: '{count} AI Ins-Unterhaltungen' },
+  'dock.total': { one: '{count} Poke-Unterhaltung', other: '{count} Poke-Unterhaltungen' },
 
   // Live activity and reasoning
   'thinking.live': 'Denkt nach',

@@ -1,5 +1,5 @@
 const HtmlWebpackPlugin = require('html-webpack-plugin')
-const { AiInsWebpackPlugin } = require('@ai-ins/webpack')
+const { PokeWebpackPlugin } = require('@poke-dev/webpack')
 
 module.exports = {
   devServer: {
@@ -26,8 +26,8 @@ module.exports = {
     ],
   },
   plugins: [
-    // 在这里添加 AiInsWebpackPlugin 插件即可
-    new AiInsWebpackPlugin(),
+    // 在这里添加 PokeWebpackPlugin 插件即可
+    new PokeWebpackPlugin(),
     new HtmlWebpackPlugin({ template: './src/index.html' }),
   ],
   resolve: {

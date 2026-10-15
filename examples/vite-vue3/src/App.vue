@@ -1,8 +1,8 @@
 <template>
   <main class="hero">
-    <span class="badge">AI Ins</span>
+    <span class="badge">Poke</span>
     <h1 class="title">按住 Option / Alt 点一下页面，AI 帮你改代码</h1>
-    <p class="desc">看到页面上哪里想改？直接点它。AI Ins 会自动找到对应的源码，告诉 AI 该改哪里。</p>
+    <p class="desc">看到页面上哪里想改？直接点它。Poke 会自动找到对应的源码，告诉 AI 该改哪里。</p>
     <p class="desc">不用翻文件、不用找代码——说一句你想怎么改，AI 直接帮你搞定。</p>
     <button class="btn" type="button">试一试</button>
   </main>

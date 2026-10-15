@@ -1,5 +1,5 @@
 import { createPermissionToken } from './permissions'
-import { compactStoredTurnOutput, persistAiInsRun, schedulePersistAiInsRun } from './run-history'
+import { compactStoredTurnOutput, persistPokeRun, schedulePersistPokeRun } from './run-history'
 
 // Reasoning can run long; the panel only needs its recent part.
 const maxThinkingLength = 24000
@@ -13,49 +13,49 @@ function compactAccumulatedOutput(output: string) {
   return output.length > maxAccumulatedOutputLength ? compactStoredTurnOutput(output) : output
 }
 import { getDisplayPath } from './source'
-import type { AiInsAgentPermissionMode, AiInsAgentSessionMode, AiInsEvent, AiInsRun, AiInsRunTurn, ResolvedAiInsAgentProvider } from './types'
+import type { PokeAgentPermissionMode, PokeAgentSessionMode, PokeEvent, PokeRun, PokeRunTurn, ResolvedPokeAgentProvider } from './types'
 import type { ServerResponse } from 'http'
 
-const maxBufferedAiInsEvents = 800
+const maxBufferedPokeEvents = 800
 const maxAccumulatedOutputLength = 80000
 
-export const aiInsRuns = new Map<string, AiInsRun>()
+export const pokeRuns = new Map<string, PokeRun>()
 
 /**
  * Bumped whenever the task list changes shape (run added or removed, turn
  * started or settled). Other tabs poll the list with it and get a cheap
  * "unchanged" answer most of the time.
  */
-let aiInsRunsVersion = 1
+let pokeRunsVersion = 1
 
-export function getAiInsRunsVersion() {
-  return aiInsRunsVersion
+export function getPokeRunsVersion() {
+  return pokeRunsVersion
 }
 
-export function bumpAiInsRunsVersion() {
-  aiInsRunsVersion += 1
+export function bumpPokeRunsVersion() {
+  pokeRunsVersion += 1
 }
 
-export type AiInsTurnMetadata = {
+export type PokeTurnMetadata = {
   agentPrompt: string
   fileName: string
   lineNumber: number
-  permissionMode?: AiInsAgentPermissionMode
+  permissionMode?: PokeAgentPermissionMode
   prompt: string
   resumed: boolean
   sourceName: string
   sourcePath: string
 }
 
-export function sendAiInsEvent(res: ServerResponse, event: AiInsEvent) {
+export function sendPokeEvent(res: ServerResponse, event: PokeEvent) {
   res.write(`data: ${JSON.stringify(event)}\n\n`)
 }
 
-function getCurrentTurn(run: AiInsRun) {
+function getCurrentTurn(run: PokeRun) {
   return run.turns[run.turns.length - 1]
 }
 
-function createTurn(index: number, providerLabel: string, metadata: AiInsTurnMetadata): AiInsRunTurn {
+function createTurn(index: number, providerLabel: string, metadata: PokeTurnMetadata): PokeRunTurn {
   return {
     agentPrompt: metadata.agentPrompt,
     completed: false,
@@ -77,7 +77,7 @@ function createTurn(index: number, providerLabel: string, metadata: AiInsTurnMet
  * Mirror the active turn onto the run so existing run-level consumers (task
  * list, dock badge) keep working without knowing about turns.
  */
-function syncRunFromCurrentTurn(run: AiInsRun) {
+function syncRunFromCurrentTurn(run: PokeRun) {
   const turn = getCurrentTurn(run)
   if (!turn) {
     return
@@ -94,8 +94,8 @@ function syncRunFromCurrentTurn(run: AiInsRun) {
   run.statusMessage = turn.statusMessage
 }
 
-export function appendAiInsEvent(runId: string, event: AiInsEvent) {
-  const run = aiInsRuns.get(runId)
+export function appendPokeEvent(runId: string, event: PokeEvent) {
+  const run = pokeRuns.get(runId)
   if (!run) {
     return
   }
@@ -143,21 +143,21 @@ export function appendAiInsEvent(runId: string, event: AiInsEvent) {
   }
 
   run.eventSeq += 1
-  const storedEvent: AiInsEvent = { ...event, seq: run.eventSeq, turn: event.turn ?? turnIndex }
+  const storedEvent: PokeEvent = { ...event, seq: run.eventSeq, turn: event.turn ?? turnIndex }
   if (turn && (event.type === 'done' || event.type === 'error')) {
     storedEvent.completedAt = turn.completedAt
     storedEvent.stopped = turn.stopped
   }
 
   run.events.push(storedEvent)
-  if (run.events.length > maxBufferedAiInsEvents) {
-    const droppedCount = run.events.length - maxBufferedAiInsEvents
+  if (run.events.length > maxBufferedPokeEvents) {
+    const droppedCount = run.events.length - maxBufferedPokeEvents
     run.events.splice(0, droppedCount)
     run.droppedEventCount += droppedCount
   }
 
   for (const subscriber of run.subscribers) {
-    sendAiInsEvent(subscriber, storedEvent)
+    sendPokeEvent(subscriber, storedEvent)
   }
 
   if (event.type !== 'heartbeat') {
@@ -182,29 +182,29 @@ export function appendAiInsEvent(runId: string, event: AiInsEvent) {
     const outputTurn = run.turns.find((candidate) => candidate.index === storedEvent.turn) ?? turn
     if (outputTurn) {
       const prefix = event.stream === 'stderr' ? '[stderr] ' : ''
-      const piece = event.type === 'error' ? `\n[ai-ins] ${event.message || 'Agent failed'}\n` : `${prefix}${event.message || ''}`
+      const piece = event.type === 'error' ? `\n[poke] ${event.message || 'Agent failed'}\n` : `${prefix}${event.message || ''}`
       outputTurn.output = compactAccumulatedOutput(`${outputTurn.output ?? ''}${piece}`)
     }
   }
 
   if (event.type === 'done' || event.type === 'error' || event.type === 'turn') {
-    bumpAiInsRunsVersion()
-    persistAiInsRun(runId)
+    bumpPokeRunsVersion()
+    persistPokeRun(runId)
   } else if (event.type === 'output' || event.type === 'thinking') {
-    schedulePersistAiInsRun(runId)
+    schedulePersistPokeRun(runId)
   }
 }
 
-export function createAiInsRun(
+export function createPokeRun(
   runId: string,
   root: string,
   logPath: string,
-  provider: Pick<ResolvedAiInsAgentProvider, 'id' | 'label'>,
-  sessionMode: AiInsAgentSessionMode,
+  provider: Pick<ResolvedPokeAgentProvider, 'id' | 'label'>,
+  sessionMode: PokeAgentSessionMode,
   sessionId: string | undefined,
-  metadata: AiInsTurnMetadata,
+  metadata: PokeTurnMetadata,
 ) {
-  const run: AiInsRun = {
+  const run: PokeRun = {
     completed: false,
     createdAt: Date.now(),
     droppedEventCount: 0,
@@ -233,13 +233,13 @@ export function createAiInsRun(
   }
 
   syncRunFromCurrentTurn(run)
-  aiInsRuns.set(runId, run)
-  bumpAiInsRunsVersion()
-  persistAiInsRun(runId)
+  pokeRuns.set(runId, run)
+  bumpPokeRunsVersion()
+  persistPokeRun(runId)
   return run
 }
 
-export function appendAiInsRunTurn(runId: string, run: AiInsRun, metadata: AiInsTurnMetadata) {
+export function appendPokeRunTurn(runId: string, run: PokeRun, metadata: PokeTurnMetadata) {
   const turn = createTurn(run.turns.length, run.providerLabel, metadata)
   run.turns.push(turn)
   run.child = undefined
@@ -248,29 +248,29 @@ export function appendAiInsRunTurn(runId: string, run: AiInsRun, metadata: AiIns
   syncRunFromCurrentTurn(run)
 
   // A `turn` event is the boundary marker the panel splits output on.
-  appendAiInsEvent(runId, { message: metadata.prompt, turn: turn.index, type: 'turn' })
+  appendPokeEvent(runId, { message: metadata.prompt, turn: turn.index, type: 'turn' })
 
   return turn
 }
 
-export function setAiInsRunSessionId(runId: string, sessionId: string) {
-  const run = aiInsRuns.get(runId)
+export function setPokeRunSessionId(runId: string, sessionId: string) {
+  const run = pokeRuns.get(runId)
   if (!run || !sessionId || run.sessionId === sessionId) {
     return
   }
 
   run.sessionId = sessionId
-  bumpAiInsRunsVersion()
-  persistAiInsRun(runId)
+  bumpPokeRunsVersion()
+  persistPokeRun(runId)
 }
 
 /**
  * Why this run cannot take another turn, as a panel message key (the panel
  * translates it, with `{provider}` filled in). Empty when it can.
  */
-export type AiInsResumeBlockedCode = '' | 'resume.noSession' | 'resume.notStarted' | 'resume.running' | 'resume.unsupported'
+export type PokeResumeBlockedCode = '' | 'resume.noSession' | 'resume.notStarted' | 'resume.running' | 'resume.unsupported'
 
-export function getAiInsRunResumeBlockedCode(run: AiInsRun): AiInsResumeBlockedCode {
+export function getPokeRunResumeBlockedCode(run: PokeRun): PokeResumeBlockedCode {
   if (run.sessionMode === 'none') {
     return 'resume.unsupported'
   }
@@ -290,7 +290,7 @@ export function getAiInsRunResumeBlockedCode(run: AiInsRun): AiInsResumeBlockedC
   return ''
 }
 
-export function getAiInsTurnOutput(run: AiInsRun, turnIndex: number) {
+export function getPokeTurnOutput(run: PokeRun, turnIndex: number) {
   return run.turns.find((candidate) => candidate.index === turnIndex)?.output ?? ''
 }
 
@@ -307,8 +307,8 @@ function toSourceLocation(sourcePath: string, lineNumber: number) {
   return sourcePath && lineNumber > 0 ? `${sourcePath}:${lineNumber}` : sourcePath
 }
 
-export function getAiInsRunSummary(runId: string, run: AiInsRun, root: string, detail = true) {
-  const resumeBlockedCode = getAiInsRunResumeBlockedCode(run)
+export function getPokeRunSummary(runId: string, run: PokeRun, root: string, detail = true) {
+  const resumeBlockedCode = getPokeRunResumeBlockedCode(run)
 
   return {
     canResume: !resumeBlockedCode,
@@ -335,7 +335,7 @@ export function getAiInsRunSummary(runId: string, run: AiInsRun, root: string, d
     status: run.status,
     statusMessage: run.statusMessage,
     turns: run.turns.map((turn) => ({
-      ...(detail ? { agentPrompt: turn.agentPrompt, output: getAiInsTurnOutput(run, turn.index), thinking: turn.thinking } : {}),
+      ...(detail ? { agentPrompt: turn.agentPrompt, output: getPokeTurnOutput(run, turn.index), thinking: turn.thinking } : {}),
       // Patches can be large; the panel asks for one when the file is expanded.
       changedFiles: turn.changedFiles?.map(({ patch: _patch, ...file }) => file),
       code: turn.code,

@@ -257,7 +257,7 @@ export const ja: MessageCatalog = {
   'settings.permissionFixed': '{provider} の権限は独自の起動オプションで決まるため、ここでの設定は適用されません。',
   'turn.fullAccess': 'フルアクセス',
   'dock.waitingPermission': '{count} 件の会話が承認待ち',
-  'dock.open': 'AI Ins を開く',
+  'dock.open': 'Poke を開く',
   'error.permissionGone': 'この権限リクエストは無効になりました（Agent は終了した可能性があります）。',
   'error.diffGone': 'このファイルの diff はもう利用できません',
 
@@ -272,7 +272,7 @@ export const ja: MessageCatalog = {
   // Dock button
   'dock.running': '{count} 件の会話が実行中',
   'dock.unread': '{count} 件の会話に新しい結果',
-  'dock.total': 'AI Ins 会話 {count} 件',
+  'dock.total': 'Poke 会話 {count} 件',
 
   // Live activity and reasoning
   'thinking.live': '考え中',

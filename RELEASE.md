@@ -1,15 +1,15 @@
 # 发布流程：Changesets
 
-本文档记录 AI Ins monorepo 的标准发布流程。根包 `ai-ins-workspace` 是 private，不会发布；实际发布的是 `packages/*` 下的 npm 包。
+本文档记录 Poke monorepo 的标准发布流程。根包 `poke-workspace` 是 private，不会发布；实际发布的是 `packages/*` 下的 npm 包。
 
 ## 发布包
 
-- `ai-ins`：CLI 包，提供 `ai-ins` 命令。
-- `@ai-ins/core`：共享运行时。
-- `@ai-ins/vite`：Vite 插件。
-- `@ai-ins/webpack`：Webpack 插件。
-- `@ai-ins/nextjs`：Next.js 插件，支持 Webpack / Turbopack dev server。
-- `@ai-ins/astro`：Astro integration。
+- `poke`：CLI 包，提供 `poke` 命令。
+- `@poke-dev/core`：共享运行时。
+- `@poke-dev/vite`：Vite 插件。
+- `@poke-dev/webpack`：Webpack 插件。
+- `@poke-dev/nextjs`：Next.js 插件，支持 Webpack / Turbopack dev server。
+- `@poke-dev/astro`：Astro integration。
 
 ## 发布前检查
 
@@ -105,20 +105,20 @@ git push --tags
 检查 npm 上的版本：
 
 ```bash
-npm view ai-ins version
-npm view @ai-ins/core version
-npm view @ai-ins/vite version
-npm view @ai-ins/webpack version
-npm view @ai-ins/nextjs version
-npm view @ai-ins/astro version
+npm view poke version
+npm view @poke-dev/core version
+npm view @poke-dev/vite version
+npm view @poke-dev/webpack version
+npm view @poke-dev/nextjs version
+npm view @poke-dev/astro version
 ```
 
 检查 CLI 是否可用：
 
 ```bash
-npx ai-ins --no-install
-npx ai-ins --help
-npx ai-ins init --help
+npx poke --no-install
+npx poke --help
+npx poke init --help
 ```
 
 ## 补发失败的包
@@ -134,7 +134,7 @@ changesets 会检查 npm registry，跳过已经发布过的版本，只继续�
 如果只想手动补发 CLI 包：
 
 ```bash
-pnpm --filter ai-ins build
+pnpm --filter poke build
 cd packages/cli
 npm publish
 ```
@@ -142,15 +142,15 @@ npm publish
 手动发布不会自动创建 changesets tag。发布成功后需要自己补 tag：
 
 ```bash
-git tag ai-ins@<version>
-git push origin ai-ins@<version>
+git tag poke@<version>
+git push origin poke@<version>
 ```
 
 ## 常见问题
 
 ### Scoped 包发布失败
 
-`@ai-ins/core`、`@ai-ins/vite`、`@ai-ins/webpack`、`@ai-ins/nextjs`、`@ai-ins/astro` 是 scoped packages，需要公开发布权限。
+`@poke-dev/core`、`@poke-dev/vite`、`@poke-dev/webpack`、`@poke-dev/nextjs`、`@poke-dev/astro` 是 scoped packages，需要公开发布权限。
 
 确保每个 scoped 包的 `package.json` 里有：
 

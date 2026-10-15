@@ -1,7 +1,7 @@
 import { defineConfig } from 'astro/config'
 import react from '@astrojs/react'
-import aiIns from '@ai-ins/astro'
+import poke from '@poke-dev/astro'
 
 export default defineConfig({
-  integrations: [react(), aiIns()],
+  integrations: [react(), poke()],
 })

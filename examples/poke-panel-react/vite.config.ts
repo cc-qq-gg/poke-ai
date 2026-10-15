@@ -1,11 +1,11 @@
-import aiIns from '@ai-ins/vite'
+import poke from '@poke-dev/vite'
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
 import { resolve } from 'node:path'
 
 export default defineConfig({
   plugins: [
-    aiIns({
+    poke({
       root: resolve(__dirname, '../..'),
     }),
     react(),

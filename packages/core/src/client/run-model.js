@@ -15,7 +15,7 @@ const maxPanelOutputLength = 70000
 const panelOutputHeadLength = 12000
 const panelOutputTailLength = 52000
 // A token, not text: the panel renders it in the current language.
-const panelOutputCompactionNotice = '\n\n[ai-ins:notice:panelTruncated]\n\n'
+const panelOutputCompactionNotice = '\n\n[poke:notice:panelTruncated]\n\n'
 
 function slicePanelOutputHead(output) {
   const newlineIndex = output.lastIndexOf('\n', panelOutputHeadLength)
@@ -68,7 +68,7 @@ function appendRunOutput(run, message, tone, turnIndex) {
   turn.output = compactOutputForPanel(`${turn.output}${prefix}${message}`)
 
   if (selectedRunId === run.id) {
-    globalThis.aiInsPanelRuntime?.refreshRunDetail()
+    globalThis.pokePanelRuntime?.refreshRunDetail()
   }
 }
 
@@ -93,9 +93,9 @@ function removeClientRun(runId) {
     repointRunId = undefined
   }
 
-  globalThis.aiInsPanelRuntime?.refreshRunList()
-  globalThis.aiInsPanelRuntime?.refreshRunDetail()
-  globalThis.aiInsPanelRuntime?.updateDockButton()
+  globalThis.pokePanelRuntime?.refreshRunList()
+  globalThis.pokePanelRuntime?.refreshRunDetail()
+  globalThis.pokePanelRuntime?.updateDockButton()
 }
 
 async function deleteRun(run) {
@@ -113,7 +113,7 @@ async function pinRun(run, pinned) {
   try {
     const result = await pinAgentRun(run.id, pinned)
     run.pinnedAt = typeof result.pinnedAt === 'number' ? result.pinnedAt : undefined
-    globalThis.aiInsPanelRuntime?.refreshRunList()
+    globalThis.pokePanelRuntime?.refreshRunList()
   } catch (error) {
     if (panelRefs) {
       panelRefs.status.textContent = error instanceof Error ? error.message : String(error)
@@ -131,8 +131,8 @@ async function clearFinishedRuns() {
 
     if (panelRefs) {
       panelRefs.status.textContent = removedIds.length
-        ? globalThis.aiInsI18n.t('sidebar.clearedCount', { count: removedIds.length })
-        : globalThis.aiInsI18n.t('sidebar.clearedNone')
+        ? globalThis.pokeI18n.t('sidebar.clearedCount', { count: removedIds.length })
+        : globalThis.pokeI18n.t('sidebar.clearedNone')
     }
   } catch (error) {
     if (panelRefs) {

@@ -1,20 +1,20 @@
 {
-  "name": "ai-ins",
+  "name": "poke",
   "version": "1.0.4",
-  "description": "Initialize AI Ins in Astro, Next.js, Vite and Webpack projects.",
+  "description": "Initialize Poke in Astro, Next.js, Vite and Webpack projects.",
   "author": "Rongding Wang <wangrongding@qq.com> (https://github.com/wangrongding)",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/wangrongding/ai-ins.git",
+    "url": "git+https://github.com/wangrongding/poke.git",
     "directory": "packages/cli"
   },
   "bugs": {
-    "url": "https://github.com/wangrongding/ai-ins/issues"
+    "url": "https://github.com/wangrongding/poke/issues"
   },
-  "homepage": "https://github.com/wangrongding/ai-ins/tree/main/packages/cli",
+  "homepage": "https://github.com/wangrongding/poke/tree/main/packages/cli",
   "type": "module",
   "bin": {
-    "ai-ins": "./dist/index.js"
+    "poke": "./dist/index.js"
   },
   "exports": {
     ".": "./dist/index.js"

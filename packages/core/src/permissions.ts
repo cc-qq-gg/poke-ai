@@ -1,47 +1,47 @@
-import { appendAiInsEvent, bumpAiInsRunsVersion, aiInsRuns } from './run-store'
+import { appendPokeEvent, bumpPokeRunsVersion, pokeRuns } from './run-store'
 import { createSessionId } from './agent-session'
 import { readRequestBody } from './source'
 import { existsSync } from 'fs'
 import { join } from 'path'
 import type { IncomingMessage, ServerResponse } from 'http'
 import type {
-  AiInsAgentPermissionMode,
-  AiInsMiddleware,
-  AiInsPermissionDecision,
-  AiInsPermissionRequest,
-  AiInsRun,
-  ResolvedAiInsAgentProvider,
+  PokeAgentPermissionMode,
+  PokeMiddleware,
+  PokePermissionDecision,
+  PokePermissionRequest,
+  PokeRun,
+  ResolvedPokeAgentProvider,
 } from './types'
 
-const permissionModes: AiInsAgentPermissionMode[] = ['ask', 'edit', 'full']
+const permissionModes: PokeAgentPermissionMode[] = ['ask', 'edit', 'full']
 
 // An unsupported level falls back to a stricter one, never a looser one.
-const permissionFallbacks: Record<AiInsAgentPermissionMode, AiInsAgentPermissionMode[]> = {
+const permissionFallbacks: Record<PokeAgentPermissionMode, PokeAgentPermissionMode[]> = {
   ask: ['ask', 'edit'],
   edit: ['edit', 'ask'],
   full: ['full', 'edit', 'ask'],
 }
 
-export const defaultPermissionMode: AiInsAgentPermissionMode = 'ask'
+export const defaultPermissionMode: PokeAgentPermissionMode = 'ask'
 
-export function parsePermissionMode(value: unknown): AiInsAgentPermissionMode | undefined {
-  return permissionModes.includes(value as AiInsAgentPermissionMode) ? (value as AiInsAgentPermissionMode) : undefined
+export function parsePermissionMode(value: unknown): PokeAgentPermissionMode | undefined {
+  return permissionModes.includes(value as PokeAgentPermissionMode) ? (value as PokeAgentPermissionMode) : undefined
 }
 
-export function getSupportedPermissionModes(provider: Pick<ResolvedAiInsAgentProvider, 'permissions'>) {
+export function getSupportedPermissionModes(provider: Pick<ResolvedPokeAgentProvider, 'permissions'>) {
   return permissionModes.filter((mode) => provider.permissions?.[mode])
 }
 
 /** The level a turn will actually run with; undefined when the provider's args fix it. */
-export function resolvePermissionMode(provider: ResolvedAiInsAgentProvider, requested: AiInsAgentPermissionMode) {
+export function resolvePermissionMode(provider: ResolvedPokeAgentProvider, requested: PokeAgentPermissionMode) {
   return provider.permissions ? permissionFallbacks[requested].find((mode) => provider.permissions?.[mode]) : undefined
 }
 
 /** Splice the level's flags in at `{permissionArgs}` (or append them). */
 export function applyPermissionArgs(
   args: string[],
-  provider: ResolvedAiInsAgentProvider,
-  mode: AiInsAgentPermissionMode | undefined,
+  provider: ResolvedPokeAgentProvider,
+  mode: PokeAgentPermissionMode | undefined,
   mcpConfig: string,
 ) {
   const permissionArgs = (mode && provider.permissions?.[mode]) || []
@@ -60,7 +60,7 @@ function getBridgeScriptPath() {
  * MCP config handed to the agent CLI for `ask`. The bridge calls back into
  * this dev server, so the URL comes from the connection that started the turn.
  */
-export function getPermissionMcpConfig(req: IncomingMessage, runId: string, run: AiInsRun) {
+export function getPermissionMcpConfig(req: IncomingMessage, runId: string, run: PokeRun) {
   const socket = req.socket as IncomingMessage['socket'] & { encrypted?: boolean }
   const protocol = socket.encrypted ? 'https' : 'http'
   // The address this connection came in on: always reachable from the same
@@ -68,10 +68,10 @@ export function getPermissionMcpConfig(req: IncomingMessage, runId: string, run:
   // servers), which only sends `:authority`.
   const address = (socket.localAddress || '127.0.0.1').replace(/^::ffff:/u, '')
   const host = `${address.includes(':') ? `[${address}]` : address}:${socket.localPort}`
-  const url = `${protocol}://${host}/__ai-ins-agent/permission?run=${encodeURIComponent(runId)}&token=${run.permissionToken}`
+  const url = `${protocol}://${host}/__poke-agent/permission?run=${encodeURIComponent(runId)}&token=${run.permissionToken}`
   return JSON.stringify({
     mcpServers: {
-      ai_ins: { args: [getBridgeScriptPath()], command: process.execPath, env: { AI_INS_PERMISSION_URL: url } },
+      ai_ins: { args: [getBridgeScriptPath()], command: process.execPath, env: { POKE_PERMISSION_URL: url } },
     },
   })
 }
@@ -101,15 +101,15 @@ function sendJson(res: ServerResponse, value: unknown, statusCode = 200) {
 }
 
 /** Resolve every request still waiting on a run (agent exited, run stopped or deleted). */
-export function cancelPendingPermissions(run: AiInsRun) {
+export function cancelPendingPermissions(run: PokeRun) {
   for (const pending of [...run.pendingPermissions.values()]) {
     pending.resolve('cancelled')
   }
 }
 
-function waitForDecision(runId: string, run: AiInsRun, request: AiInsPermissionRequest, res: ServerResponse) {
+function waitForDecision(runId: string, run: PokeRun, request: PokePermissionRequest, res: ServerResponse) {
   let settled = false
-  const resolve = (decision: AiInsPermissionDecision) => {
+  const resolve = (decision: PokePermissionDecision) => {
     if (settled) return
     settled = true
     run.pendingPermissions.delete(request.id)
@@ -122,25 +122,25 @@ function waitForDecision(runId: string, run: AiInsRun, request: AiInsPermissionR
       sendJson(res, allowed ? { behavior: 'allow' } : { behavior: 'deny', message: decision === 'cancelled' ? 'The request was cancelled.' : 'The user denied this tool call.' })
     }
 
-    appendAiInsEvent(runId, { permissionDecision: decision, permissionId: request.id, type: 'permission-resolved' })
+    appendPokeEvent(runId, { permissionDecision: decision, permissionId: request.id, type: 'permission-resolved' })
     // A token line keeps the decision in the transcript (and history), shown in the panel's language.
     const summary = summarizePermissionInput(request.input)
-    appendAiInsEvent(runId, { message: `\n[ai-ins:permission:${decision}] ${request.toolName}${summary ? ` ${summary}` : ''}\n`, stream: 'stdout', type: 'output' })
-    bumpAiInsRunsVersion()
+    appendPokeEvent(runId, { message: `\n[poke:permission:${decision}] ${request.toolName}${summary ? ` ${summary}` : ''}\n`, stream: 'stdout', type: 'output' })
+    bumpPokeRunsVersion()
   }
 
   run.pendingPermissions.set(request.id, { request, resolve })
   // The agent process died (stopped, crashed): nobody is waiting for the answer any more.
   res.on('close', () => resolve('cancelled'))
-  appendAiInsEvent(runId, { permission: request, type: 'permission' })
-  bumpAiInsRunsVersion()
+  appendPokeEvent(runId, { permission: request, type: 'permission' })
+  bumpPokeRunsVersion()
 }
 
 /**
  * `POST ?run=&token=` — the bridge asking on behalf of the agent; held open
  * until the user answers. `POST ?run=&request=&decision=` — the panel answering.
  */
-export function aiInsPermissionMiddleware(root: string): AiInsMiddleware {
+export function pokePermissionMiddleware(root: string): PokeMiddleware {
   return async (req, res) => {
     if (req.method !== 'POST') {
       res.statusCode = 405
@@ -150,7 +150,7 @@ export function aiInsPermissionMiddleware(root: string): AiInsMiddleware {
 
     const requestUrl = new URL(req.url || '', 'http://localhost')
     const runId = requestUrl.searchParams.get('run') || ''
-    const run = aiInsRuns.get(runId)
+    const run = pokeRuns.get(runId)
     const requestId = requestUrl.searchParams.get('request')
 
     if (requestId) {
@@ -167,7 +167,7 @@ export function aiInsPermissionMiddleware(root: string): AiInsMiddleware {
     }
 
     if (!run || requestUrl.searchParams.get('token') !== run.permissionToken) {
-      sendJson(res, { behavior: 'deny', message: 'Unknown AI Ins run.' }, 403)
+      sendJson(res, { behavior: 'deny', message: 'Unknown Poke run.' }, 403)
       return
     }
 

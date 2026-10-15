@@ -4,10 +4,10 @@ import type { PermissionMode } from './types'
  * Per-conversation composer state kept in sessionStorage, so it survives a
  * page reload (HMR full reloads are common in dev) but not a new tab.
  */
-const draftsStorageKey = 'ai-ins-panel-prompt-drafts'
-const queuedStorageKey = 'ai-ins-panel-queued-prompts'
+const draftsStorageKey = 'poke-panel-prompt-drafts'
+const queuedStorageKey = 'poke-panel-queued-prompts'
 // Single-draft key used before drafts were per conversation; migrated once.
-const legacyDraftStorageKey = 'ai-ins-panel-prompt-draft'
+const legacyDraftStorageKey = 'poke-panel-prompt-draft'
 
 /** Draft key of the blank "new conversation" composer. Conversations use their run id. */
 export const newConversationDraftKey = 'new'
@@ -73,7 +73,7 @@ export function saveQueuedPrompts(queued: Map<string, string>) {
   writeMap(queuedStorageKey, Object.fromEntries(queued))
 }
 
-const permissionModeStorageKey = 'ai-ins-permission-mode'
+const permissionModeStorageKey = 'poke-permission-mode'
 
 /** "Ask me" unless the user chose otherwise; kept across tabs and reloads. */
 export function readPermissionMode(): PermissionMode {
@@ -88,7 +88,7 @@ export function readPermissionMode(): PermissionMode {
 export function savePermissionMode(value: PermissionMode) {
   try {
     window.localStorage.setItem(permissionModeStorageKey, value)
-    globalThis.aiInsRememberSetting?.(permissionModeStorageKey, value)
+    globalThis.pokeRememberSetting?.(permissionModeStorageKey, value)
   } catch {
     // Ignore storage restrictions in embedded browsers.
   }

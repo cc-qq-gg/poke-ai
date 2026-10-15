@@ -1,4 +1,4 @@
-# @ai-ins/playground-webpack
+# @poke-dev/playground-webpack
 
 ## 0.1.0
 
@@ -9,4 +9,4 @@
 ### Patch Changes
 
 - Updated dependencies
-  - @ai-ins/webpack@0.2.0
+  - @poke-dev/webpack@0.2.0

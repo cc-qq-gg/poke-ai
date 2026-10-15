@@ -1,17 +1,17 @@
 {
-  "name": "@ai-ins/vite",
+  "name": "@poke-dev/vite",
   "version": "1.0.4",
-  "description": "Vite plugin for AI Ins.",
+  "description": "Vite plugin for Poke.",
   "author": "Rongding Wang <wangrongding@qq.com> (https://github.com/wangrongding)",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/wangrongding/ai-ins.git",
+    "url": "git+https://github.com/wangrongding/poke.git",
     "directory": "packages/vite"
   },
   "bugs": {
-    "url": "https://github.com/wangrongding/ai-ins/issues"
+    "url": "https://github.com/wangrongding/poke/issues"
   },
-  "homepage": "https://github.com/wangrongding/ai-ins/tree/main/packages/vite",
+  "homepage": "https://github.com/wangrongding/poke/tree/main/packages/vite",
   "type": "module",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
@@ -45,7 +45,7 @@
     "vite": "^5.0.0 || ^6.0.0 || ^7.0.0 || ^8.0.0"
   },
   "dependencies": {
-    "@ai-ins/core": "workspace:*",
+    "@poke-dev/core": "workspace:*",
     "@babel/core": "^7.29.0",
     "svelte": "^5.55.5",
     "@vue/compiler-dom": "^3.5.13",

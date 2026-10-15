@@ -1,9 +1,9 @@
-import aiIns from '@ai-ins/vite'
+import poke from '@poke-dev/vite'
 import vue from '@vitejs/plugin-vue'
 import { defineConfig } from 'vite'
 
 export default defineConfig({
-  plugins: [aiIns(), vue()],
+  plugins: [poke(), vue()],
   server: {
     port: 5174,
     open: true,

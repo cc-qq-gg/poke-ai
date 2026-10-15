@@ -12,7 +12,7 @@
       title: 'Clicked Element Context',
     },
     {
-      description: 'Show what AI Ins sends to the local coding agent after a click.',
+      description: 'Show what Poke sends to the local coding agent after a click.',
       prompt: '把这个骨架填充成 prompt context 面板，展示用户需求、DOM source stack 和源码 excerpt。',
       title: 'Agent Prompt Context',
     },
@@ -41,7 +41,7 @@
 
 <main>
   <header>
-    <p>AI Ins Svelte Playground</p>
+    <p>Poke Svelte Playground</p>
     <h1>Click-to-code skeleton</h1>
     <p>Option / Alt click a section, then let the local agent fill only that module.</p>
   </header>

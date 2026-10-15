@@ -115,12 +115,12 @@ function Card({ onOpenDocs }: { onOpenDocs: () => void }) {
   return (
     <section className='card'>
       <div className='card-glow' aria-hidden='true' />
-      <p className='eyebrow'>AI Ins</p>
+      <p className='eyebrow'>Poke</p>
       <h1>
         Option / Alt 点选 <span>DOM</span>
       </h1>
       <p className='card-title'>把页面元素直接交给本地 AI 编码代理。</p>
-      <p>打开 AI Ins 面板，把目标组件和修改需求交给本地 Codex / Claude CLI。</p>
+      <p>打开 Poke 面板，把目标组件和修改需求交给本地 Codex / Claude CLI。</p>
       <button className='card-action' onClick={onOpenDocs}>
         快速开始
       </button>
@@ -130,7 +130,7 @@ function Card({ onOpenDocs }: { onOpenDocs: () => void }) {
 }
 
 /* 回归用例：spread 透传 + portal 到 body（Radix/shadcn 浮层的最简形态）。
- * 组件调用点注入的 data-ai-ins-source 应随 {...props} 落到 portal 出去的 DOM 上。 */
+ * 组件调用点注入的 data-poke-source 应随 {...props} 落到 portal 出去的 DOM 上。 */
 function PortalBadge({ children, ...props }: React.HTMLAttributes<HTMLDivElement>) {
   return createPortal(
     <div className='portal-badge' {...props}>

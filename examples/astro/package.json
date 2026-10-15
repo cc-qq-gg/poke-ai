@@ -1,5 +1,5 @@
 {
-  "name": "@ai-ins/playground-astro",
+  "name": "@poke-dev/playground-astro",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -9,7 +9,7 @@
     "preview": "astro preview"
   },
   "dependencies": {
-    "@ai-ins/astro": "workspace:*",
+    "@poke-dev/astro": "workspace:*",
     "@astrojs/react": "^4.4.2",
     "astro": "^5.18.2",
     "@types/react": "^19.1.0",

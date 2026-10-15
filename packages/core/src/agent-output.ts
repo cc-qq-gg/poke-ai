@@ -118,7 +118,7 @@ function collectJsonText(value: unknown, depth = 0): string[] {
 }
 
 function truncateAgentOutput(message: string, maxLength = 2400) {
-  return message.length > maxLength ? `${message.slice(0, maxLength)}\n[ai-ins] output truncated\n` : message
+  return message.length > maxLength ? `${message.slice(0, maxLength)}\n[poke] output truncated\n` : message
 }
 
 function formatCursorSystemEvent(event: Record<string, unknown>) {

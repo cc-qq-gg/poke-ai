@@ -1,21 +1,21 @@
 {
-  "name": "@ai-ins/astro",
+  "name": "@poke-dev/astro",
   "version": "1.0.4",
-  "description": "Astro integration for AI Ins.",
+  "description": "Astro integration for Poke.",
   "author": "Rongding Wang <wangrongding@qq.com> (https://github.com/wangrongding)",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/wangrongding/ai-ins.git",
+    "url": "git+https://github.com/wangrongding/poke.git",
     "directory": "packages/astro"
   },
   "bugs": {
-    "url": "https://github.com/wangrongding/ai-ins/issues"
+    "url": "https://github.com/wangrongding/poke/issues"
   },
-  "homepage": "https://github.com/wangrongding/ai-ins/tree/main/packages/astro",
+  "homepage": "https://github.com/wangrongding/poke/tree/main/packages/astro",
   "keywords": [
     "astro-integration",
     "withastro",
-    "ai-ins"
+    "poke"
   ],
   "type": "module",
   "main": "./dist/index.cjs",
@@ -50,8 +50,8 @@
     "astro": "^4.0.0 || ^5.0.0 || ^6.0.0 || ^7.0.0"
   },
   "dependencies": {
-    "@ai-ins/core": "workspace:*",
-    "@ai-ins/vite": "workspace:*",
+    "@poke-dev/core": "workspace:*",
+    "@poke-dev/vite": "workspace:*",
     "@astrojs/compiler": "^2.10.3"
   }
 }

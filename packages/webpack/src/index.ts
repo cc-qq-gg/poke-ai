@@ -1,11 +1,11 @@
 import { existsSync } from 'node:fs'
 import { join } from 'node:path'
-import { createAiInsMiddlewares, getAiInsClientCode, normalizeProxy } from '@ai-ins/core'
-import type { AiInsPluginOptions } from '@ai-ins/core'
+import { createPokeMiddlewares, getPokeClientCode, normalizeProxy } from '@poke-dev/core'
+import type { PokePluginOptions } from '@poke-dev/core'
 
-export type { AiInsPluginOptions }
+export type { PokePluginOptions }
 
-export type AiInsWebpackPluginOptions = AiInsPluginOptions & { clientPath?: string }
+export type PokeWebpackPluginOptions = PokePluginOptions & { clientPath?: string }
 
 type WebpackCompiler = {
   options?: {
@@ -67,7 +67,7 @@ function testMatchesExtension(test: unknown, extension: string) {
   }
 
   test.lastIndex = 0
-  return test.test(`ai-ins-entry${extension}`)
+  return test.test(`poke-entry${extension}`)
 }
 
 function isJsTsRule(rule: Record<string, unknown>) {
@@ -128,9 +128,9 @@ function injectSourceLoaderIntoRules(rules: unknown[]): boolean {
   return didInject
 }
 
-export class AiInsWebpackPlugin {
-  readonly name = 'ai-ins:webpack'
-  constructor(private readonly options: AiInsWebpackPluginOptions = {}) {}
+export class PokeWebpackPlugin {
+  readonly name = 'poke:webpack'
+  constructor(private readonly options: PokeWebpackPluginOptions = {}) {}
 
   apply(compiler: WebpackCompiler) {
     if (!compiler.options) compiler.options = {}
@@ -160,15 +160,15 @@ export class AiInsWebpackPlugin {
       const root = pluginOptions.root || devServer.compiler?.context || process.cwd()
       const app = devServer.app
       if (app) {
-        for (const route of createAiInsMiddlewares(root, pluginOptions)) {
+        for (const route of createPokeMiddlewares(root, pluginOptions)) {
           app.use(route.path, route.middleware as (...args: unknown[]) => unknown)
         }
         const clientMiddleware = (_req: unknown, res: { setHeader: (key: string, value: string) => void; end: (body: string) => void }) => {
           res.setHeader('Content-Type', 'application/javascript; charset=utf-8')
-          res.end(getAiInsClientCode({ base: '/', defaultProvider: pluginOptions.agents?.defaultProvider, options: pluginOptions, pluginProxy: normalizeProxy(pluginOptions.codex?.proxy ?? pluginOptions.proxy), root }))
+          res.end(getPokeClientCode({ base: '/', defaultProvider: pluginOptions.agents?.defaultProvider, options: pluginOptions, pluginProxy: normalizeProxy(pluginOptions.codex?.proxy ?? pluginOptions.proxy), root }))
         }
-        app.use('/__ai-ins/client.js', clientMiddleware as (...args: unknown[]) => unknown)
-        if (pluginOptions.clientPath && pluginOptions.clientPath !== '/__ai-ins/client.js') {
+        app.use('/__poke/client.js', clientMiddleware as (...args: unknown[]) => unknown)
+        if (pluginOptions.clientPath && pluginOptions.clientPath !== '/__poke/client.js') {
           app.use(pluginOptions.clientPath, clientMiddleware as (...args: unknown[]) => unknown)
         }
       }
@@ -177,8 +177,8 @@ export class AiInsWebpackPlugin {
   }
 }
 
-export function aiIns(options: AiInsWebpackPluginOptions = {}) {
-  return new AiInsWebpackPlugin(options)
+export function poke(options: PokeWebpackPluginOptions = {}) {
+  return new PokeWebpackPlugin(options)
 }
 
-export default AiInsWebpackPlugin
+export default PokeWebpackPlugin

@@ -1,5 +1,5 @@
 {
-  "name": "@ai-ins/playground-panel-react",
+  "name": "@poke-dev/playground-panel-react",
   "version": "0.1.16",
   "private": true,
   "type": "module",
@@ -9,7 +9,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@ai-ins/vite": "workspace:*",
+    "@poke-dev/vite": "workspace:*",
     "@vitejs/plugin-react": "^6.0.1",
     "vite": "^8.0.10",
     "typescript": "^5.8.3",

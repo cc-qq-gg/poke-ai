@@ -7,7 +7,7 @@ async function readResponseError(response) {
   try {
     const payload = JSON.parse(body)
     if (payload && typeof payload.error === 'string') {
-      const message = globalThis.aiInsI18n?.t(payload.error, payload.params)
+      const message = globalThis.pokeI18n?.t(payload.error, payload.params)
       if (message && message !== payload.error) {
         return new Error(message)
       }
@@ -39,8 +39,8 @@ async function revealInFolder(layerPath) {
   throw await readResponseError(response)
 }
 
-async function runAiInsAgent(layer, layers, providerId, prompt, proxyMode, proxy, resumeRunId, permissionMode) {
-  const response = await fetch(`${base}__ai-ins-agent`, {
+async function runPokeAgent(layer, layers, providerId, prompt, proxyMode, proxy, resumeRunId, permissionMode) {
+  const response = await fetch(`${base}__poke-agent`, {
     body: JSON.stringify({
       file: layer?.path,
       layers,
@@ -67,7 +67,7 @@ async function runAiInsAgent(layer, layers, providerId, prompt, proxyMode, proxy
 
 async function loadAgentRuns(version) {
   const query = version ? `?version=${encodeURIComponent(version)}` : ''
-  const response = await fetch(`${base}__ai-ins-agent/runs${query}`)
+  const response = await fetch(`${base}__poke-agent/runs${query}`)
 
   if (!response.ok) {
     throw await readResponseError(response)
@@ -77,7 +77,7 @@ async function loadAgentRuns(version) {
 }
 
 async function loadAgentRun(runId) {
-  const response = await fetch(`${base}__ai-ins-agent/runs?id=${encodeURIComponent(runId)}`)
+  const response = await fetch(`${base}__poke-agent/runs?id=${encodeURIComponent(runId)}`)
 
   if (response.status === 404) {
     return { run: null }
@@ -92,7 +92,7 @@ async function loadAgentRun(runId) {
 
 async function loadAgentFileDiff(runId, turnIndex, path) {
   const query = `id=${encodeURIComponent(runId)}&turn=${encodeURIComponent(turnIndex)}&file=${encodeURIComponent(path)}`
-  const response = await fetch(`${base}__ai-ins-agent/runs?${query}`)
+  const response = await fetch(`${base}__poke-agent/runs?${query}`)
 
   if (!response.ok) {
     throw await readResponseError(response)
@@ -103,7 +103,7 @@ async function loadAgentFileDiff(runId, turnIndex, path) {
 
 async function answerAgentPermission(runId, requestId, decision) {
   const query = `run=${encodeURIComponent(runId)}&request=${encodeURIComponent(requestId)}&decision=${encodeURIComponent(decision)}`
-  const response = await fetch(`${base}__ai-ins-agent/permission?${query}`, { method: 'POST' })
+  const response = await fetch(`${base}__poke-agent/permission?${query}`, { method: 'POST' })
 
   if (!response.ok) {
     throw await readResponseError(response)
@@ -113,7 +113,7 @@ async function answerAgentPermission(runId, requestId, decision) {
 }
 
 async function loadWorkspaceChanges() {
-  const response = await fetch(`${base}__ai-ins-agent/changes`)
+  const response = await fetch(`${base}__poke-agent/changes`)
 
   if (!response.ok) {
     throw await readResponseError(response)
@@ -123,7 +123,7 @@ async function loadWorkspaceChanges() {
 }
 
 async function loadWorkspaceFileDiff(path, staged) {
-  const response = await fetch(`${base}__ai-ins-agent/changes?file=${encodeURIComponent(path)}&staged=${staged ? 1 : 0}`)
+  const response = await fetch(`${base}__poke-agent/changes?file=${encodeURIComponent(path)}&staged=${staged ? 1 : 0}`)
 
   if (!response.ok) {
     throw await readResponseError(response)
@@ -133,7 +133,7 @@ async function loadWorkspaceFileDiff(path, staged) {
 }
 
 async function stageWorkspaceFiles(paths, staged) {
-  const response = await fetch(`${base}__ai-ins-agent/changes?action=${staged ? 'stage' : 'unstage'}`, {
+  const response = await fetch(`${base}__poke-agent/changes?action=${staged ? 'stage' : 'unstage'}`, {
     body: JSON.stringify({ paths }),
     headers: { 'Content-Type': 'application/json' },
     method: 'POST',
@@ -147,7 +147,7 @@ async function stageWorkspaceFiles(paths, staged) {
 }
 
 async function pinAgentRun(runId, pinned) {
-  const response = await fetch(`${base}__ai-ins-agent/runs?id=${encodeURIComponent(runId)}&action=${pinned ? 'pin' : 'unpin'}`, {
+  const response = await fetch(`${base}__poke-agent/runs?id=${encodeURIComponent(runId)}&action=${pinned ? 'pin' : 'unpin'}`, {
     method: 'POST',
   })
 
@@ -159,7 +159,7 @@ async function pinAgentRun(runId, pinned) {
 }
 
 async function stopAgentRun(runId) {
-  const response = await fetch(`${base}__ai-ins-agent/runs?id=${encodeURIComponent(runId)}&action=stop`, {
+  const response = await fetch(`${base}__poke-agent/runs?id=${encodeURIComponent(runId)}&action=stop`, {
     method: 'POST',
   })
 
@@ -171,7 +171,7 @@ async function stopAgentRun(runId) {
 }
 
 async function clearFinishedAgentRuns() {
-  const response = await fetch(`${base}__ai-ins-agent/runs?scope=finished`, {
+  const response = await fetch(`${base}__poke-agent/runs?scope=finished`, {
     method: 'DELETE',
   })
 
@@ -183,7 +183,7 @@ async function clearFinishedAgentRuns() {
 }
 
 async function deleteAgentRun(runId) {
-  const response = await fetch(`${base}__ai-ins-agent/runs?id=${encodeURIComponent(runId)}`, {
+  const response = await fetch(`${base}__poke-agent/runs?id=${encodeURIComponent(runId)}`, {
     method: 'DELETE',
   })
 
@@ -195,30 +195,30 @@ async function deleteAgentRun(runId) {
 }
 
 /*
- * Panel settings live in ~/.ai-ins/settings.json, shared by every project,
+ * Panel settings live in ~/.poke/settings.json, shared by every project,
  * port and browser. localStorage stays as the synchronous copy the panel
  * reads; every change goes to both, and the file wins when the page loads.
  */
 const userSettingFields = {
-  'ai-ins-locale': 'locale',
-  'ai-ins-notify': 'notify',
-  'ai-ins-panel-submit-shortcut': 'submitShortcut',
-  'ai-ins-panel-theme': 'theme',
-  'ai-ins-permission-mode': 'permissionMode',
-  'ai-ins-provider': 'provider',
-  'ai-ins-proxy': 'proxy',
-  'ai-ins-proxy-mode': 'proxyMode',
+  'poke-locale': 'locale',
+  'poke-notify': 'notify',
+  'poke-panel-submit-shortcut': 'submitShortcut',
+  'poke-panel-theme': 'theme',
+  'poke-permission-mode': 'permissionMode',
+  'poke-provider': 'provider',
+  'poke-proxy': 'proxy',
+  'poke-proxy-mode': 'proxyMode',
 }
 let pendingUserSettings = {}
 let userSettingsTimer
 
 function toUserSettingValue(storageKey, value) {
-  if (storageKey === 'ai-ins-notify') return value === 'on'
+  if (storageKey === 'poke-notify') return value === 'on'
   return value || ''
 }
 
 function fromUserSettingValue(storageKey, value) {
-  if (storageKey === 'ai-ins-notify') return value ? 'on' : 'off'
+  if (storageKey === 'poke-notify') return value ? 'on' : 'off'
   return typeof value === 'string' ? value : ''
 }
 
@@ -227,11 +227,11 @@ function flushUserSettings() {
   pendingUserSettings = {}
   userSettingsTimer = undefined
   if (!Object.keys(patch).length) return
-  void fetch(`${base}__ai-ins-settings`, {
+  void fetch(`${base}__poke-settings`, {
     body: JSON.stringify(patch),
     headers: { 'Content-Type': 'application/json' },
     method: 'POST',
-  }).catch((error) => console.warn('[ai-ins] save settings failed:', error))
+  }).catch((error) => console.warn('[poke] save settings failed:', error))
 }
 
 /** Store a setting locally and queue it for the settings file. `null` / '' clears it. */
@@ -250,7 +250,7 @@ function rememberSetting(storageKey, value) {
   userSettingsTimer = window.setTimeout(flushUserSettings, 300)
 }
 
-globalThis.aiInsRememberSetting = rememberSetting
+globalThis.pokeRememberSetting = rememberSetting
 
 /**
  * Pull the settings file into localStorage. Keys the file does not have yet
@@ -260,7 +260,7 @@ globalThis.aiInsRememberSetting = rememberSetting
 async function loadUserSettings() {
   let payload
   try {
-    const response = await fetch(`${base}__ai-ins-settings`)
+    const response = await fetch(`${base}__poke-settings`)
     if (!response.ok) return
     payload = await response.json()
   } catch {
@@ -294,5 +294,5 @@ async function loadUserSettings() {
   }
 
   flushUserSettings()
-  if (changed) globalThis.aiInsPanelRuntime?.applyUserSettings()
+  if (changed) globalThis.pokePanelRuntime?.applyUserSettings()
 }

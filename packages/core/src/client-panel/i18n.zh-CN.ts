@@ -262,7 +262,7 @@ export const zhCN = {
   'settings.permissionFixed': '{provider} 的权限由它自己的启动参数决定，这里的设置对它不生效。',
   'turn.fullAccess': '完全访问',
   'dock.waitingPermission': '{count} 个会话等待授权',
-  'dock.open': '打开 AI Ins',
+  'dock.open': '打开 Poke',
   'error.permissionGone': '这个授权请求已经失效了（Agent 可能已经结束）。',
   'error.diffGone': '这个文件的 diff 已经不存在了',
 
@@ -277,7 +277,7 @@ export const zhCN = {
   // Dock button
   'dock.running': '{count} 个会话运行中',
   'dock.unread': '{count} 个会话有新结果',
-  'dock.total': '{count} 个 AI Ins 会话',
+  'dock.total': '{count} 个 Poke 会话',
 
   // Live activity and reasoning
   'thinking.live': '思考中',

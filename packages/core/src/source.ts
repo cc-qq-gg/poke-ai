@@ -186,7 +186,7 @@ ${context.text}
 }
 
 export function buildAgentPrompt(options: AgentPromptTarget & { rawPrompt: string }) {
-  return `You are an AI coding agent invoked from AI Ins after the user Option-clicked a DOM node in the running app.
+  return `You are an AI coding agent invoked from Poke after the user Option-clicked a DOM node in the running app.
 
 User request:
 ${options.rawPrompt}
@@ -203,7 +203,7 @@ Please edit the repository directly. Keep the change narrowly scoped to the clic
  */
 export function buildWorkspaceAgentPrompt(options: { pageUrl?: string; rawPrompt: string; root: string }) {
   const page = options.pageUrl ? `\nThe user had this page of the running app open: ${options.pageUrl}\n` : ''
-  return `You are an AI coding agent invoked from the AI Ins panel in the running app. The user did not pick a specific element, so the request may concern any part of the project.
+  return `You are an AI coding agent invoked from the Poke panel in the running app. The user did not pick a specific element, so the request may concern any part of the project.
 
 User request:
 ${options.rawPrompt}
@@ -217,7 +217,7 @@ Please work in this repository directly. Find the relevant code yourself, keep t
  * Prompt for turn 2+ of an existing agent session. The agent still holds the
  * first turn's source excerpt and its own edits, so re-sending that block would
  * just burn context and invite it to redo work — `target` is only passed when
- * the user re-pointed AI Ins at a different element.
+ * the user re-pointed Poke at a different element.
  */
 export function buildFollowUpAgentPrompt(options: {
   previousDisplayPath: string
@@ -229,12 +229,12 @@ export function buildFollowUpAgentPrompt(options: {
   // No previous focus: the conversation was started for the project as a whole.
   const previous = previousDisplayPath || 'none, the whole project'
   const focusBlock = target
-    ? `\nThe user re-pointed AI Ins at a different element (previous focus: ${previous}). Treat the block below as the new focus:\n\n${buildTargetBlock(target)}\n`
+    ? `\nThe user re-pointed Poke at a different element (previous focus: ${previous}). Treat the block below as the new focus:\n\n${buildTargetBlock(target)}\n`
     : previousDisplayPath
       ? `\nSame focus as the previous turn: ${previousDisplayPath}\n`
       : '\nNo specific element is in focus; the request concerns the project as a whole.\n'
 
-  return `Follow-up request from AI Ins — turn ${turnNumber} of the same session. You already have the earlier turns in context, including any edits you made.
+  return `Follow-up request from Poke — turn ${turnNumber} of the same session. You already have the earlier turns in context, including any edits you made.
 
 User request:
 ${rawPrompt}

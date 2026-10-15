@@ -7,7 +7,7 @@ function subscribeAgentRun(run) {
   // replaying — and re-appending — every event of the earlier turns.
   const since = run.lastSeq || 0
   const eventSource = new window.EventSource(
-    `${base}__ai-ins-agent/events?id=${encodeURIComponent(run.id)}&since=${since}`,
+    `${base}__poke-agent/events?id=${encodeURIComponent(run.id)}&since=${since}`,
   )
   runSubscriptions.set(run.id, eventSource)
 
@@ -48,15 +48,15 @@ function subscribeAgentRun(run) {
       run.interrupted = false
       run.status = 'starting'
       run.canResume = false
-      globalThis.aiInsPanelRuntime?.refreshRunList()
-      globalThis.aiInsPanelRuntime?.refreshRunDetail()
+      globalThis.pokePanelRuntime?.refreshRunList()
+      globalThis.pokePanelRuntime?.refreshRunDetail()
       return
     }
 
     if (payload.type === 'permission' && payload.permission) {
       if (!run.pendingPermissions.some((request) => request.id === payload.permission.id)) {
         run.pendingPermissions.push(payload.permission)
-        globalThis.aiInsPanelRuntime?.notifyRun(run, 'waiting')
+        globalThis.pokePanelRuntime?.notifyRun(run, 'waiting')
       }
     }
 
@@ -98,7 +98,7 @@ function subscribeAgentRun(run) {
     const wasRunning = !run.completed
 
     if (payload.type === 'error') {
-      if (wasRunning) globalThis.aiInsPanelRuntime?.notifyRun(run, 'failed')
+      if (wasRunning) globalThis.pokePanelRuntime?.notifyRun(run, 'failed')
       run.status = 'failed'
       run.completed = true
       run.statusMessage = payload.message || `${run.providerLabel} failed to start`
@@ -108,7 +108,7 @@ function subscribeAgentRun(run) {
         turn.status = 'failed'
         turn.statusMessage = run.statusMessage
       }
-      appendRunOutput(run, `\n[ai-ins] ${run.statusMessage}\n`, 'stderr', payload.turn)
+      appendRunOutput(run, `\n[poke] ${run.statusMessage}\n`, 'stderr', payload.turn)
       // Same as `done`: the server knows whether a session exists to go back to.
       run.canResume = false
       void refreshRunResumability(run)
@@ -118,7 +118,7 @@ function subscribeAgentRun(run) {
     if (payload.type === 'done') {
       const succeeded = payload.code === 0 && !payload.stopped
       // A stop is the user's own action; nothing to tell them.
-      if (wasRunning && !payload.stopped) globalThis.aiInsPanelRuntime?.notifyRun(run, succeeded ? 'done' : 'failed')
+      if (wasRunning && !payload.stopped) globalThis.pokePanelRuntime?.notifyRun(run, succeeded ? 'done' : 'failed')
       run.completed = true
       run.status = succeeded ? 'done' : 'failed'
       run.stopping = false
@@ -142,8 +142,8 @@ function subscribeAgentRun(run) {
       closeSubscription()
     }
 
-    globalThis.aiInsPanelRuntime?.refreshRunList()
-    globalThis.aiInsPanelRuntime?.refreshRunDetail()
+    globalThis.pokePanelRuntime?.refreshRunList()
+    globalThis.pokePanelRuntime?.refreshRunDetail()
   }
 
   eventSource.onerror = () => {
@@ -158,8 +158,8 @@ function subscribeAgentRun(run) {
     run.status = 'disconnected'
     run.statusMessage = 'reconnecting'
     scheduleRunResync(run)
-    globalThis.aiInsPanelRuntime?.refreshRunList()
-    globalThis.aiInsPanelRuntime?.refreshRunDetail()
+    globalThis.pokePanelRuntime?.refreshRunList()
+    globalThis.pokePanelRuntime?.refreshRunDetail()
   }
 }
 
@@ -208,10 +208,10 @@ function scheduleRunResync(run) {
       return
     }
 
-    globalThis.aiInsPanelRuntime?.refreshRunList()
-    globalThis.aiInsPanelRuntime?.refreshRunDetail()
-    globalThis.aiInsPanelRuntime?.refreshComposer()
-    globalThis.aiInsPanelRuntime?.updateDockButton()
+    globalThis.pokePanelRuntime?.refreshRunList()
+    globalThis.pokePanelRuntime?.refreshRunDetail()
+    globalThis.pokePanelRuntime?.refreshComposer()
+    globalThis.pokePanelRuntime?.updateDockButton()
   }, delay)
 
   runResyncTimers.set(run.id, { attempt, timer })
@@ -224,7 +224,7 @@ async function loadRunDetail(run) {
   }
 
   run.detailLoading = true
-  globalThis.aiInsPanelRuntime?.refreshRunDetail()
+  globalThis.pokePanelRuntime?.refreshRunDetail()
 
   try {
     const result = await loadAgentRun(run.id)
@@ -234,11 +234,11 @@ async function loadRunDetail(run) {
       removeClientRun(run.id)
     }
   } catch (error) {
-    console.error('[ai-ins] load AI Ins run failed:', error)
+    console.error('[poke] load Poke run failed:', error)
   } finally {
     run.detailLoading = false
-    globalThis.aiInsPanelRuntime?.refreshRunDetail()
-    globalThis.aiInsPanelRuntime?.refreshComposer()
+    globalThis.pokePanelRuntime?.refreshRunDetail()
+    globalThis.pokePanelRuntime?.refreshComposer()
   }
 }
 
@@ -253,13 +253,13 @@ async function refreshRunResumability(run) {
     run.canResume = Boolean(summary.canResume)
     run.resumeBlockedCode = summary.resumeBlockedCode || ''
     run.sessionMode = summary.sessionMode || run.sessionMode
-    globalThis.aiInsPanelRuntime?.refreshRunList()
-    globalThis.aiInsPanelRuntime?.refreshRunDetail()
-    globalThis.aiInsPanelRuntime?.refreshComposer()
+    globalThis.pokePanelRuntime?.refreshRunList()
+    globalThis.pokePanelRuntime?.refreshRunDetail()
+    globalThis.pokePanelRuntime?.refreshComposer()
     // A follow-up typed while this turn ran goes out now that the session is free.
-    globalThis.aiInsPanelRuntime?.flushQueuedPrompt(run)
+    globalThis.pokePanelRuntime?.flushQueuedPrompt(run)
   } catch (error) {
-    console.error('[ai-ins] refresh AI Ins run failed:', error)
+    console.error('[poke] refresh Poke run failed:', error)
   }
 }
 
@@ -377,16 +377,16 @@ async function hydrateAgentRuns() {
     }
 
     sortClientRuns()
-    globalThis.aiInsPanelRuntime?.restoreQueuedPrompts()
-    globalThis.aiInsPanelRuntime?.restoreLastConversation()
+    globalThis.pokePanelRuntime?.restoreQueuedPrompts()
+    globalThis.pokePanelRuntime?.restoreLastConversation()
   } catch (error) {
-    console.error('[ai-ins] load AI Ins runs failed:', error)
+    console.error('[poke] load Poke runs failed:', error)
   } finally {
     runsHydrated = true
     scheduleRunListSync()
-    globalThis.aiInsPanelRuntime?.refreshRunList()
-    globalThis.aiInsPanelRuntime?.refreshRunDetail()
-    globalThis.aiInsPanelRuntime?.updateDockButton()
+    globalThis.pokePanelRuntime?.refreshRunList()
+    globalThis.pokePanelRuntime?.refreshRunDetail()
+    globalThis.pokePanelRuntime?.updateDockButton()
   }
 }
 
@@ -417,9 +417,9 @@ function createRun(result, layer, provider, prompt) {
   runs.unshift(run)
   selectedRunId = run.id
   subscribeAgentRun(run)
-  globalThis.aiInsPanelRuntime?.refreshRunList()
-  globalThis.aiInsPanelRuntime?.refreshRunDetail()
-  globalThis.aiInsPanelRuntime?.updateDockButton()
+  globalThis.pokePanelRuntime?.refreshRunList()
+  globalThis.pokePanelRuntime?.refreshRunDetail()
+  globalThis.pokePanelRuntime?.updateDockButton()
 }
 
 /** Attach a follow-up turn to the run the user chose to continue. */
@@ -455,9 +455,9 @@ function appendRunTurn(result, layer, provider, prompt) {
   selectedRunId = run.id
   sortClientRuns()
   subscribeAgentRun(run)
-  globalThis.aiInsPanelRuntime?.refreshRunList()
-  globalThis.aiInsPanelRuntime?.refreshRunDetail()
-  globalThis.aiInsPanelRuntime?.updateDockButton()
+  globalThis.pokePanelRuntime?.refreshRunList()
+  globalThis.pokePanelRuntime?.refreshRunDetail()
+  globalThis.pokePanelRuntime?.updateDockButton()
 }
 
 /**
@@ -468,7 +468,7 @@ function appendRunTurn(result, layer, provider, prompt) {
  */
 function scheduleRunListSync(delay) {
   window.clearTimeout(runListSyncTimer)
-  runListSyncTimer = window.setTimeout(syncRunList, delay ?? (aiInsPanel ? 4000 : 15000))
+  runListSyncTimer = window.setTimeout(syncRunList, delay ?? (pokePanel ? 4000 : 15000))
 }
 
 async function syncRunList() {
@@ -517,14 +517,14 @@ function applyRunListSnapshot(result, requestedAt) {
   sortClientRuns()
   for (const run of runs) {
     if (run.completed) {
-      globalThis.aiInsPanelRuntime?.flushQueuedPrompt(run)
+      globalThis.pokePanelRuntime?.flushQueuedPrompt(run)
     }
   }
 
-  globalThis.aiInsPanelRuntime?.refreshRunList()
-  globalThis.aiInsPanelRuntime?.refreshRunDetail()
-  globalThis.aiInsPanelRuntime?.refreshComposer()
-  globalThis.aiInsPanelRuntime?.updateDockButton()
+  globalThis.pokePanelRuntime?.refreshRunList()
+  globalThis.pokePanelRuntime?.refreshRunDetail()
+  globalThis.pokePanelRuntime?.refreshComposer()
+  globalThis.pokePanelRuntime?.updateDockButton()
 }
 
 document.addEventListener('visibilitychange', () => {
@@ -537,7 +537,7 @@ async function stopRun(run) {
   try {
     await stopAgentRun(run.id)
     run.stopping = true
-    globalThis.aiInsPanelRuntime?.refreshRunDetail()
+    globalThis.pokePanelRuntime?.refreshRunDetail()
   } catch (error) {
     if (panelRefs) {
       panelRefs.status.textContent = error instanceof Error ? error.message : String(error)

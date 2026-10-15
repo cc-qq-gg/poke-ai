@@ -184,7 +184,7 @@ function resolveWindowsCommand(command: string) {
 
 function resolvePosixCommand(command: string) {
   try {
-    const output = execFileSync('/bin/sh', ['-c', 'command -v "$1"', 'ai-ins-command-lookup', command], {
+    const output = execFileSync('/bin/sh', ['-c', 'command -v "$1"', 'poke-command-lookup', command], {
       stdio: ['ignore', 'pipe', 'ignore'],
     })
       .toString()

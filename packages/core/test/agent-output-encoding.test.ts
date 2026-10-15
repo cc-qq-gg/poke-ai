@@ -3,10 +3,10 @@ import { tmpdir } from 'os'
 import { join } from 'path'
 import { PassThrough } from 'stream'
 import { afterAll, describe, expect, it } from 'vitest'
-import { aiInsEditMiddleware } from '../src/middleware'
-import { aiInsRuns } from '../src/run-store'
+import { pokeEditMiddleware } from '../src/middleware'
+import { pokeRuns } from '../src/run-store'
 
-const root = mkdtempSync(join(tmpdir(), 'ai-ins-encoding-'))
+const root = mkdtempSync(join(tmpdir(), 'poke-encoding-'))
 afterAll(() => rmSync(root, { force: true, recursive: true }))
 
 // An agent that writes "告诉我。" with the 3 bytes of "我" split across two
@@ -20,7 +20,7 @@ setTimeout(() => { for (const stream of [process.stdout, process.stderr]) stream
 
 describe('agent output decoding', () => {
   it('keeps a multi-byte character that arrives split across two chunks', async () => {
-    const middleware = aiInsEditMiddleware(
+    const middleware = pokeEditMiddleware(
       root,
       {
         agents: {
@@ -31,14 +31,14 @@ describe('agent output decoding', () => {
       },
       '',
     )
-    const req = Object.assign(new PassThrough(), { method: 'POST', socket: { localAddress: '127.0.0.1', localPort: 1 }, url: '/__ai-ins-agent' })
+    const req = Object.assign(new PassThrough(), { method: 'POST', socket: { localAddress: '127.0.0.1', localPort: 1 }, url: '/__poke-agent' })
     req.end(JSON.stringify({ prompt: 'hi', provider: 'split' }))
     const body = await new Promise<string>((resolve) => {
       void middleware(req as never, { end: resolve, setHeader: () => {}, statusCode: 200 } as never, () => {})
     })
 
     const result = JSON.parse(body)
-    const run = aiInsRuns.get(result.runId)!
+    const run = pokeRuns.get(result.runId)!
     for (let i = 0; i < 100 && !run.completed; i += 1) await new Promise((resolve) => setTimeout(resolve, 50))
 
     // stdout and stderr interleave, so only look at the character that was split.

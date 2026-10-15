@@ -5,7 +5,7 @@ import { t } from './i18n'
  * elsewhere: a turn finished, failed, or is waiting for a permission answer.
  * Opt-in from settings; the browser asks for permission on the first enable.
  */
-const notifyStorageKey = 'ai-ins-notify'
+const notifyStorageKey = 'poke-notify'
 
 export type NotifySupport = 'default' | 'denied' | 'granted' | 'unsupported'
 
@@ -25,7 +25,7 @@ export function readNotifyEnabled() {
 function saveNotifyEnabled(enabled: boolean) {
   try {
     window.localStorage.setItem(notifyStorageKey, enabled ? 'on' : 'off')
-    globalThis.aiInsRememberSetting?.(notifyStorageKey, enabled ? 'on' : 'off')
+    globalThis.pokeRememberSetting?.(notifyStorageKey, enabled ? 'on' : 'off')
   } catch {
     // Ignore storage restrictions in embedded browsers.
   }

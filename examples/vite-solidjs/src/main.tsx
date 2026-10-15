@@ -53,7 +53,7 @@ const modules: DemoModule[] = [
 const scriptSteps = [
   'Open the SolidJS playground',
   'Option / Alt click a module skeleton',
-  'Paste the module prompt into AI Ins',
+  'Paste the module prompt into Poke',
   'Watch the agent edit only that region',
 ]
 
@@ -68,7 +68,7 @@ function ModuleSkeleton(props: { module: DemoModule; selected: boolean; onSelect
     <button class={`module module-${props.module.accent}`} classList={{ 'module-selected': props.selected }} onClick={props.onSelect} type="button">
       <span class="module-topline">
         <span class="module-status">{statusLabel(props.module.status)}</span>
-        <span class="module-pin">AI Ins target</span>
+        <span class="module-pin">Poke target</span>
       </span>
       <strong>{props.module.title}</strong>
       <span class="module-description">{props.module.description}</span>
@@ -94,7 +94,7 @@ function PromptPanel(props: { module: DemoModule }) {
       <div class="source-card">
         <span>Expected click source</span>
         <strong>examples/vite-solidjs/src/main.tsx</strong>
-        <small>Solid JSX elements should receive AI Ins source attributes in dev mode.</small>
+        <small>Solid JSX elements should receive Poke source attributes in dev mode.</small>
       </div>
     </aside>
   )
@@ -117,8 +117,8 @@ function DemoApp() {
     <main class="shell">
       <header class="masthead">
         <div>
-          <p class="eyebrow">AI Ins SolidJS Playground</p>
-          <h1>AI Ins 点击编程演示台</h1>
+          <p class="eyebrow">Poke SolidJS Playground</p>
+          <h1>Poke 点击编程演示台</h1>
           <p class="lede">Start with clean module skeletons, then Option / Alt click each region and let your local agent generate the real cockpit modules.</p>
         </div>
         <ProviderStrip />
@@ -132,7 +132,7 @@ function DemoApp() {
           </ol>
         </nav>
 
-        <section class="module-board" aria-label="AI Ins module skeletons">
+        <section class="module-board" aria-label="Poke module skeletons">
           <For each={modules}>
             {(module, index) => <ModuleSkeleton module={module} selected={selectedIndex() === index()} onSelect={() => setSelectedIndex(index())} />}
           </For>

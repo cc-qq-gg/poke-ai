@@ -1,6 +1,6 @@
-import { withAiIns } from '@ai-ins/nextjs'
+import { withPoke } from '@poke-dev/nextjs'
 import type { NextConfig } from 'next'
 
 const nextConfig: NextConfig = {}
 
-export default withAiIns(nextConfig)
+export default withPoke(nextConfig)
