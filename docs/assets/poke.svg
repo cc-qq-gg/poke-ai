@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" role="img" aria-label="Poke">
+  <!-- App tile: dark graphite, like the panel brand mark. -->
+  <rect width="48" height="48" rx="13" fill="#0d0d0d"/>
+  <!-- Selection brackets: the picked element, framed at its source. -->
+  <g fill="none" stroke="#ffffff" stroke-width="3" stroke-linecap="round">
+    <path d="M13 19v-3a3 3 0 0 1 3-3h3"/>
+    <path d="M29 13h3a3 3 0 0 1 3 3v3"/>
+    <path d="M35 29v3a3 3 0 0 1-3 3h-3"/>
+    <path d="M19 35h-3a3 3 0 0 1-3-3v-3"/>
+  </g>
+  <!-- The poke: contact point with a ring still trembling. -->
+  <g fill="none" stroke="#ffffff" stroke-width="2" opacity="0.5">
+    <circle cx="24" cy="24" r="5.5"/>
+  </g>
+  <circle cx="24" cy="24" r="2.5" fill="#ffffff"/>
+</svg>

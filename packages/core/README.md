@@ -15,6 +15,6 @@ Poke 的共享运行时，包含 dev server 中间件、Agent 调度（Codex、C
 
 开发时按住 `Option`（Windows / Linux 是 `Alt`）点选页面元素，Poke 会把元素对应的源码位置和你的需求一起交给本机的 Agent CLI（Codex、Claude Code、Copilot、Gemini、Cursor），改完由热更新直接显示结果。只在开发态生效，生产构建里没有任何 Poke 代码。
 
-![Poke 对话面板](https://raw.githubusercontent.com/wangrongding/poke/fab60d043e6f4e0a7f4257a6c3596ec32fafb81c/docs/images/conversation.webp)
+![Poke 对话面板](https://raw.githubusercontent.com/wangrongding/poke-ai/main/docs/images/conversation.webp)
 
-完整文档：[https://github.com/wangrongding/poke](https://github.com/wangrongding/poke#readme)
+完整文档：[https://github.com/wangrongding/poke-ai](https://github.com/wangrongding/poke-ai#readme)

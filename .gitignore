@@ -1,6 +1,7 @@
 node_modules
+.pnpm-store
 .codex
-.ai-ins
+.poke
 dist
 
 .DS_Store

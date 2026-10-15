@@ -18,11 +18,14 @@
   "updateInternalDependencies": "patch",
   "ignore": [
     "@poke-dev/playground-vite",
+    "@poke-dev/playground-vite4",
     "@poke-dev/playground-vite-vue3",
     "@poke-dev/playground-vite-solidjs",
     "@poke-dev/playground-vite-svelte",
     "@poke-dev/playground-nextjs",
     "@poke-dev/playground-webpack",
+    "@poke-dev/playground-webpack4",
+    "@poke-dev/playground-vue2",
     "@poke-dev/playground-astro"
   ]
 }

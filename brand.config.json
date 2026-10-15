@@ -21,6 +21,6 @@
     "cliCommand": "poke-ai",
     "cliAlias": "poke",
     "npmScope": "@poke-dev",
-    "repoUrl": "https://github.com/wangrongding/poke"
+    "repoUrl": "https://github.com/wangrongding/poke-ai"
   }
 }

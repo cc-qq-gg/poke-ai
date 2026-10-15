@@ -4,7 +4,7 @@ Poke 的接入 CLI：一行命令把 Poke 接到 Vite、Webpack、Next.js 或 As
 
 **Poke 是什么**：开发时按住 `Option`（Windows / Linux 是 `Alt`）点选页面元素，说一句话，本机的 AI 编码 Agent（Codex、Claude Code、Copilot、Gemini、Cursor）就从这个元素对应的源码开始修改，热更新直接显示结果。
 
-![按住 Option 点选页面元素](https://raw.githubusercontent.com/wangrongding/poke/fab60d043e6f4e0a7f4257a6c3596ec32fafb81c/docs/images/pick.webp)
+![按住 Option 点选页面元素](https://raw.githubusercontent.com/wangrongding/poke-ai/main/docs/images/pick.webp)
 
 ## 快速接入
 
@@ -107,4 +107,4 @@ export default defineConfig({
 5. CLI 报告无法安全修改时，按上面「手动接入」的示例改，不要猜测改哪个文件。
 6. 在 `.gitignore` 里加上 `.poke`。
 
-完整文档：[https://github.com/wangrongding/poke](https://github.com/wangrongding/poke#readme)
+完整文档：[https://github.com/wangrongding/poke-ai](https://github.com/wangrongding/poke-ai#readme)

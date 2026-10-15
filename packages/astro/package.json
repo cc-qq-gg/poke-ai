@@ -5,13 +5,13 @@
   "author": "Rongding Wang <wangrongding@qq.com> (https://github.com/wangrongding)",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/wangrongding/poke.git",
+    "url": "git+https://github.com/wangrongding/poke-ai.git",
     "directory": "packages/astro"
   },
   "bugs": {
-    "url": "https://github.com/wangrongding/poke/issues"
+    "url": "https://github.com/wangrongding/poke-ai/issues"
   },
-  "homepage": "https://github.com/wangrongding/poke/tree/main/packages/astro",
+  "homepage": "https://github.com/wangrongding/poke-ai/tree/main/packages/astro",
   "keywords": [
     "astro-integration",
     "withastro",
